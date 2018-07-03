@@ -19,7 +19,7 @@ train_sample_percentage = 0.9
 data_file = "Data/simple_pred_QA-pair.csv"
 filter_sizes = "3,4,5"
 num_filters = 128
-seq_length = 36
+seq_length = 100
 num_classes = 1
 dropout_keep_prob = 0.5
 l2_reg_lambda = 1
@@ -31,6 +31,7 @@ num_checkpoints = 5
 allow_soft_placement = True
 log_device_placement = False
 embedding_dimension = 50
+neg_sample_ratio = 3
 
 # Data Preparation
 # ==================================================
@@ -39,13 +40,18 @@ embedding_dimension = 50
 print("Loading data...")
 quetions, pred_questions, answers, pred_answers = Data.read_pred_data(data_file)
 
-# pair = list(zip(quetions, pred_questions, answers, pred_answers))
-# random.shuffle(pair)
-# quetions, pred_questions, answers, pred_answers = zip(*pair)
+
 
 word_dict, word_embedding = Data.generate_word_embedding(pred_questions, pred_answers, embedding_dimension)
 
-s1, s2, score = Data.generate_cnn_data(pred_questions, pred_answers, word_dict)
+s1, s2, score = Data.generate_cnn_data(pred_questions, pred_answers, word_dict, neg_sample_ratio)
+
+
+pair = list(zip(s1, s2, score))
+random.shuffle(pair)
+s1, s2, score = zip(*pair)
+s1, s2, score = np.array(s1), np.array(s2), np.array(score)
+
 sample_num = len(score)
 train_end = int(sample_num * train_sample_percentage)
 
@@ -55,6 +61,7 @@ s1_train, s1_dev = s1[:train_end], s1[train_end:]
 s2_train, s2_dev = s2[:train_end], s2[train_end:]
 score_train, score_dev = score[:train_end], score[train_end:]
 print("Train/Dev split: {:d}/{:d}".format(len(score_train), len(score_dev)))
+
 
 # Training
 # ==================================================
@@ -71,6 +78,9 @@ with tf.Graph().as_default():
             filter_sizes=list(map(int, filter_sizes.split(","))),
             num_filters=num_filters,
             l2_reg_lambda=l2_reg_lambda)
+
+        cnn.set_word_embedding(word_embedding)
+        cnn.initial()
 
         # Define Training procedure
         global_step = tf.Variable(0, name="global_step", trainable=False)
@@ -151,13 +161,13 @@ with tf.Graph().as_default():
                 [global_step, dev_summary_op, cnn.loss, cnn.pearson],
                 feed_dict)
             time_str = datetime.datetime.now().isoformat()
-            print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, pearson))
+            print("{}: step {}, loss {:g}, pearson {:g}".format(time_str, step, loss, pearson))
             if writer:
                 writer.add_summary(summaries, step)
 
 
         # Generate batches
-        STS_train = CNN_data_helper.dataset(s1=s1_train, s2=s2_train, label=score_train)
+        STS_train = Data.dataset(s1=s1_train, s2=s2_train, label=score_train)
         # Training loop. For each batch...
 
         for i in range(40000):

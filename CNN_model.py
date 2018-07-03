@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-from CNN_data_helper import build_glove_dic
 
 class TextCNN(object):
     """
@@ -23,6 +22,12 @@ class TextCNN(object):
         # Keeping track of l2 regularization loss (optional)
         self.l2_loss = tf.constant(0.0)
 
+
+
+    def set_word_embedding(self, word_embedding):
+        self.word_embedding = word_embedding
+
+    def initial(self):
         self.init_weight()
         self.inference()
         self.add_dropout()
@@ -32,7 +37,6 @@ class TextCNN(object):
     def init_weight(self):
         # Embedding layer
         with tf.device('/cpu:0'), tf.name_scope("embedding"):
-            _, self.word_embedding = build_glove_dic()
             self.embedding_size = self.word_embedding.shape[1]
             self.W = tf.get_variable(name='word_embedding', shape=self.word_embedding.shape, dtype=tf.float32,
                                      initializer=tf.constant_initializer(self.word_embedding), trainable=True)
@@ -88,7 +92,7 @@ class TextCNN(object):
             b = tf.Variable(tf.constant(0.1, shape=[self.num_classes]), name="b")
             self.l2_loss += tf.nn.l2_loss(W)
             self.l2_loss += tf.nn.l2_loss(b)
-            self.scores = tf.nn.xw_plus_b(self.h_drop, W, b, name="scores")
+            self.scores = tf.nn.sigmoid(tf.nn.xw_plus_b(self.h_drop, W, b, name="scores"))
 
     def add_loss_acc(self):
         # CalculateMean cross-entropy loss
