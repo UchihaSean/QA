@@ -1,5 +1,35 @@
 # This Python file uses the following encoding: utf-8
 import csv
+import numpy as np
+
+class dataset(object):
+    def __init__(self,s1,s2,label):
+        self.index_in_epoch = 0
+        self.s1 = s1
+        self.s2 = s2
+        self.label = label
+        self.example_nums = len(label)
+        self.epochs_completed = 0
+
+    def next_batch(self,batch_size):
+        start = self.index_in_epoch
+        self.index_in_epoch += batch_size
+        if self.index_in_epoch > self.example_nums:
+            # Finished epoch
+            self.epochs_completed += 1
+            # Shuffle the data
+            perm = np.arange(self.example_nums)
+            np.random.shuffle(perm)
+            self.s1 = self.s1[perm]
+            self.s2 = self.s2[perm]
+            self.label = self.label[perm]
+            # Start next epoch
+            start = 0
+            self.index_in_epoch = batch_size
+            assert batch_size <= self.example_nums
+        end = self.index_in_epoch
+        return np.array(self.s1[start:end]),np.array(self.s2[start:end]), np.array(self.label[start:end])
+
 
 def read_origin_data(input_file_name,output_file_name, stopwords_file = "Data/Chinese Stop Words"):
     """
@@ -24,7 +54,7 @@ def read_origin_data(input_file_name,output_file_name, stopwords_file = "Data/Ch
         answers.append(qa[1].decode('utf-8'))
 
         # Counter for test
-        if i >100: break
+        # if i >100: break
 
     file.close()
     print("Read files End")
@@ -77,6 +107,44 @@ def read_pred_data(file_name):
 
     return quetions, pred_questions, answers, pred_answers
 
+def generate_word_embedding(questions, answers, dimension):
+    """
+    Generate word embedding matrix based on questions and answers
+    """
+    word_dict = {'<unk>':0}
+    for i in range(len(questions)):
+        for j in range(len(questions[i])):
+            if questions[i][j] not in word_dict:
+                word_dict[questions[i][j]] = len(word_dict)
+
+    for i in range(len(answers)):
+        for j in range(len(answers[i])):
+            if answers[i][j] not in word_dict:
+                word_dict[answers[i][j]] = len(word_dict)
+
+    word_embedding = np.random.normal(size = (len(word_dict),dimension))
+
+    return word_dict,word_embedding
+
+def generate_cnn_data(questions, answers, word_dict):
+    """
+    Generate QA pair data
+    """
+    s1, s2, score = [], [], []
+    for i in range(len(questions)):
+        q, a = [], []
+        for j in range(len(questions[i])):
+            if questions[i][j] in word_dict:
+                q.append(word_dict[questions[i][j]])
+            else:
+                q.append(0)
+        for j in range(len(answers[i])):
+            if answers[i][j] in word_dict:
+                a.append(word_dict[answers[i][j]])
+            else:
+                a.append(0)
+
+
 
 def get_stop_words(file_name):
     """
@@ -114,10 +182,11 @@ def preprocessing(conversations, stopwords_file):
 
 
 def main():
-    read_origin_data("Data/QA-pair","Data/simple_pred_QA-pair.csv", stopwords_file="Data/Simple Chinese Stop Words.txt")
+    # read_origin_data("Data/QA-pair","Data/simple_pred_QA-pair.csv", stopwords_file="Data/Simple Chinese Stop Words.txt")
     # stop_words = get_stop_words("Data/Chinese Stop Words")
     # pred_conversations = preprocessing([u'你好？！你呢'])
-    # read_pred_data("Data/pred_QA-pair.csv")
+    read_pred_data("Data/pred_QA-pair.csv")
+
 
 
 if __name__ == "__main__":

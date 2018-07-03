@@ -1,5 +1,5 @@
-#coding=utf-8
-#! /usr/bin/env python
+# coding=utf-8
+# ! /usr/bin/env python
 
 import datetime
 import os
@@ -10,12 +10,13 @@ from tensorflow.contrib import learn
 
 import Data
 from CNN_model import TextCNN
+import random
 
 # Parameters
 # ==================================================
 
 train_sample_percentage = 0.9
-data_file = "Data/QA-pair"
+data_file = "Data/simple_pred_QA-pair.csv"
 filter_sizes = "3,4,5"
 num_filters = 128
 seq_length = 36
@@ -29,14 +30,22 @@ checkpoint_every = 100
 num_checkpoints = 5
 allow_soft_placement = True
 log_device_placement = False
+embedding_dimension = 50
 
 # Data Preparation
 # ==================================================
 
-# Load data
+# Read Preprocessed Data
 print("Loading data...")
-s1 ,s2, score = CNN_data_helper.read_data_sets(data_file)
-score = np.asarray([[s] for s in score])
+quetions, pred_questions, answers, pred_answers = Data.read_pred_data(data_file)
+
+# pair = list(zip(quetions, pred_questions, answers, pred_answers))
+# random.shuffle(pair)
+# quetions, pred_questions, answers, pred_answers = zip(*pair)
+
+word_dict, word_embedding = Data.generate_word_embedding(pred_questions, pred_answers, embedding_dimension)
+
+s1, s2, score = Data.generate_cnn_data(pred_questions, pred_answers, word_dict)
 sample_num = len(score)
 train_end = int(sample_num * train_sample_percentage)
 
@@ -47,14 +56,13 @@ s2_train, s2_dev = s2[:train_end], s2[train_end:]
 score_train, score_dev = score[:train_end], score[train_end:]
 print("Train/Dev split: {:d}/{:d}".format(len(score_train), len(score_dev)))
 
-
 # Training
 # ==================================================
 
 with tf.Graph().as_default():
     session_conf = tf.ConfigProto(
-      allow_soft_placement=allow_soft_placement,
-      log_device_placement=log_device_placement)
+        allow_soft_placement=allow_soft_placement,
+        log_device_placement=log_device_placement)
     sess = tf.Session(config=session_conf)
     with sess.as_default():
         cnn = TextCNN(
@@ -110,15 +118,16 @@ with tf.Graph().as_default():
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
 
+
         def train_step(s1, s2, score):
             """
             A single training step
             """
             feed_dict = {
-              cnn.input_s1: s1,
-              cnn.input_s2: s2,
-              cnn.input_y: score,
-              cnn.dropout_keep_prob: dropout_keep_prob
+                cnn.input_s1: s1,
+                cnn.input_s2: s2,
+                cnn.input_y: score,
+                cnn.dropout_keep_prob: dropout_keep_prob
             }
             _, step, summaries, loss, pearson = sess.run(
                 [train_op, global_step, train_summary_op, cnn.loss, cnn.pearson],
@@ -127,15 +136,16 @@ with tf.Graph().as_default():
             print("{}: step {}, loss {:g}, pearson {:g}".format(time_str, step, loss, pearson))
             train_summary_writer.add_summary(summaries, step)
 
+
         def dev_step(s1, s2, score, writer=None):
             """
             Evaluates model on a dev set
             """
             feed_dict = {
-              cnn.input_s1: s1,
-              cnn.input_s2: s2,
-              cnn.input_y: score,
-              cnn.dropout_keep_prob: 1.0
+                cnn.input_s1: s1,
+                cnn.input_s2: s2,
+                cnn.input_y: score,
+                cnn.dropout_keep_prob: 1.0
             }
             step, summaries, loss, pearson = sess.run(
                 [global_step, dev_summary_op, cnn.loss, cnn.pearson],
@@ -144,6 +154,7 @@ with tf.Graph().as_default():
             print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, pearson))
             if writer:
                 writer.add_summary(summaries, step)
+
 
         # Generate batches
         STS_train = CNN_data_helper.dataset(s1=s1_train, s2=s2_train, label=score_train)
@@ -161,4 +172,3 @@ with tf.Graph().as_default():
             if current_step % checkpoint_every == 0:
                 path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                 print("Saved model checkpoint to {}\n".format(path))
-
