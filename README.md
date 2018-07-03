@@ -6,5 +6,5 @@
 #### LM    ---------------------- LM.py
 #### CNN   ---------------------- CNN_model.py CNN_train.py
 
-##### Data not uploaded beacuse of the privacy
+##### plus: Data not uploaded beacuse of the privacy
 
