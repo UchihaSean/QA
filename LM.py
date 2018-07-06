@@ -1,7 +1,50 @@
+# This Python file uses the following encoding: utf-8
 import Data
 import numpy as np
 import heapq
 import random
+
+class LM:
+    def __init__(self):
+        # Read Preprocessed Data
+        self.quetions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(
+            "Data/pred_QA-pair.csv")
+
+        pair = list(zip(self.quetions, self.pred_questions, self.answers, self.pred_answers))
+        random.shuffle(pair)
+        self.quetions, self.pred_questions, self.answers, self.pred_answers = zip(*pair)
+
+        # Build word --> sentence dictionary
+        self.word_sentence_dict = generate_word_sentence_dict(self.pred_questions)
+
+    def ask_response(self, question):
+        pred_q = Data.preprocessing([question.decode("utf-8")])
+
+        top_k = 5
+        top = []
+
+        # Generate sentence id set which include at least one same word
+        sentence_id_set = set()
+        for j in range(len(pred_q[0])):
+            if pred_q[0][j] in self.word_sentence_dict:
+                sentence_id_set.update(self.word_sentence_dict[pred_q[0][j]])
+
+        # Generate cosine similarity score
+        for j in sentence_id_set:
+            score = LM_similarity(pred_q[0], self.pred_questions[j],len(self.pred_questions[j]))
+            heapq.heappush(top, (-score, str(j)))
+
+        print("Question: %s" % question)
+
+        # Generate Top K
+        for j in range(min(top_k, len(top))):
+            item = int(heapq.heappop(top)[1])
+            # print("Similar %d: %s" % (j + 1, self.quetions[item]))
+            print("Response %d: %s" % (j + 1, self.answers[item]))
+
+        print("")
+
+
 
 def LM_similarity(query, document, doc_len):
     """
@@ -94,4 +137,6 @@ def main():
 
 
 if __name__=="__main__":
-    main()
+    # main()
+    lm = LM()
+    lm.ask_response("有什么好的电脑么")

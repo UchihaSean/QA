@@ -109,23 +109,22 @@ def read_pred_data(file_name):
 
     return quetions, pred_questions, answers, pred_answers
 
-def padding_sentence(s1, s2):
+def padding_sentence(s1, s2, seq_length):
     """
     Padding each sentence to the max sentence length with <unk> 0
     """
-    s1_length_max = max([len(s) for s in s1])
-    s2_length_max = max([len(s) for s in s2])
 
-    sentence_length = max(s1_length_max, s2_length_max)
     sentence_num = len(s1)
-    s1_padding = np.zeros([sentence_num, sentence_length], dtype=int)
-    s2_padding = np.zeros([sentence_num, sentence_length], dtype=int)
+    s1_padding = np.zeros([sentence_num, seq_length], dtype=int)
+    s2_padding = np.zeros([sentence_num, seq_length], dtype=int)
 
     for i, s in enumerate(s1):
-        s1_padding[i][:len(s)] = s
+        min_length = min(len(s), seq_length)
+        s1_padding[i][:min_length] = s[:min_length]
 
     for i, s in enumerate(s2):
-        s2_padding[i][:len(s)] = s
+        min_length = min(len(s), seq_length)
+        s2_padding[i][:min_length] = s[:min_length]
 
     print("padding completed")
     return s1_padding, s2_padding
@@ -150,7 +149,7 @@ def generate_word_embedding(questions, answers, dimension):
     return word_dict, word_embedding
 
 
-def generate_cnn_data(questions, answers, word_dict, neg_sample_ratio):
+def generate_cnn_data(questions, answers, word_dict, neg_sample_ratio, seq_length):
     """
     Generate QA pair data
     """
@@ -193,7 +192,7 @@ def generate_cnn_data(questions, answers, word_dict, neg_sample_ratio):
         s2.append(a)
         score.append([0])
 
-    s1, s2 = padding_sentence(s1, s2)
+    s1, s2 = padding_sentence(s1, s2, seq_length)
     print("Sampling completed")
 
     return s1, s2, score
@@ -211,7 +210,7 @@ def get_stop_words(file_name):
     return set(stop_words)
 
 
-def preprocessing(conversations, stopwords_file):
+def preprocessing(conversations, stopwords_file="Data/Chinese Stop Words"):
     """
     Stop words removal
     """
