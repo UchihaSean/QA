@@ -8,14 +8,14 @@ class LM:
     def __init__(self, top_k, questions = None, pred_questions = None, answers = None, pred_answers = None):
         # Read Preprocessed Data
         if questions == None:
-            self.quetions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(
+            self.questions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(
             "Data/pred_QA-pair.csv")
         else:
-            self.quetions, self.pred_questions, self.answers, self.pred_answers = questions, pred_questions, answers, pred_answers
+            self.questions, self.pred_questions, self.answers, self.pred_answers = questions, pred_questions, answers, pred_answers
 
-        pair = list(zip(self.quetions, self.pred_questions, self.answers, self.pred_answers))
+        pair = list(zip(self.questions, self.pred_questions, self.answers, self.pred_answers))
         random.shuffle(pair)
-        self.quetions, self.pred_questions, self.answers, self.pred_answers = zip(*pair)
+        self.questions, self.pred_questions, self.answers, self.pred_answers = zip(*pair)
 
         # Build word --> sentence dictionary
         self.word_sentence_dict = Data.generate_word_sentence_dict(self.pred_questions)
@@ -48,7 +48,7 @@ class LM:
         # Generate Top K
         for j in range(min(self.top_k, len(top))):
             item = int(heapq.heappop(top)[1])
-            # print("Similar %d: %s" % (j + 1, self.quetions[item]))
+            # print("Similar %d: %s" % (j + 1, self.questions[item]))
             # print("LM Response %d: %s" % (j + 1, self.answers[item]))
             response.append(self.answers[item])
 
@@ -82,26 +82,26 @@ def LM_similarity(query, document, doc_len):
 
 def main():
     # Read Preprocessed Data
-    quetions, pred_questions, answers, pred_answers = Data.read_pred_data("Data/pred_QA-pair.csv")
+    questions, pred_questions, answers, pred_answers = Data.read_pred_data("Data/pred_QA-pair.csv")
 
-    pair = list(zip(quetions, pred_questions, answers, pred_answers))
+    pair = list(zip(questions, pred_questions, answers, pred_answers))
     random.shuffle(pair)
-    quetions, pred_questions, answers, pred_answers = zip(*pair)
+    questions, pred_questions, answers, pred_answers = zip(*pair)
 
     # Split Data
     split_ratio = 0.7
-    split_len = int(len(quetions) * split_ratio)
-    train_questions = quetions[:split_len]
+    split_len = int(len(questions) * split_ratio)
+    train_questions = questions[:split_len]
     train_pred_questions = pred_questions[:split_len]
     train_answers = answers[:split_len]
     train_pred_answers = pred_answers[:split_len]
-    test_questions = quetions[split_len:]
+    test_questions = questions[split_len:]
     test_pred_questions = pred_questions[split_len:]
     test_answers = answers[split_len:]
     test_pred_answers = pred_answers[split_len:]
 
     # Build word --> sentence dictionary
-    word_sentence_dict = generate_word_sentence_dict(train_pred_questions)
+    word_sentence_dict = Data.generate_word_sentence_dict(train_pred_questions)
 
     # Choose the Top K similar ones
     top_k = 5

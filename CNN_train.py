@@ -33,7 +33,7 @@ class CNN:
         self.embedding_dimension = 50
         self.neg_sample_ratio = 5
         self.epoch_num = 3000
-        self.quetions = questions
+        self.questions = questions
         self.pred_questions = pred_questions
         self.answers = answers
         self.pred_answers = pred_answers
@@ -46,8 +46,8 @@ class CNN:
         """
         # Read Preprocessed Data
         print("Loading data...")
-        if self.quetions == None:
-            self.quetions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(self.data_file)
+        if self.questions == None:
+            self.questions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(self.data_file)
 
         self.word_dict, self.word_embedding = Data.generate_word_embedding(self.pred_questions, self.pred_answers, self.embedding_dimension)
 
@@ -221,7 +221,7 @@ class CNN:
         # Generate Top K
         for j in range(min(self.top_k, len(top))):
             item = int(heapq.heappop(top)[1])
-            # print("Similar %d: %s" % (j + 1, self.quetions[item]))
+            # print("Similar %d: %s" % (j + 1, self.questions[item]))
             # print("CNN Response %d: %s" % (j + 1, self.answers[item]))
             response.append(self.answers[item])
 
@@ -233,9 +233,11 @@ class CNN:
 
 
 def main():
-    cnn = CNN()
-    cnn.train_dev()
-    # cnn.ask_response("有什么好的电脑么")
+    questions, pred_questions, answers, pred_answers = Data.read_pred_data("Data/pred_QA-pair.csv")
+    cnn = CNN(3, questions, pred_questions, answers, pred_answers)
+    # cnn = CNN(3)
+    # cnn.train_dev()
+    cnn.ask_response("有什么好的电脑么")
 
 
 if __name__ == "__main__":
