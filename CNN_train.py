@@ -6,7 +6,7 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib import learn
+import heapq
 
 import Data
 from CNN_model import TextCNN
@@ -165,12 +165,12 @@ class CNN:
                         filter_sizes=list(map(int, self.filter_sizes.split(","))),
                         num_filters=self.num_filters,
                         l2_reg_lambda=self.l2_reg_lambda)
-
+                    cnn.set_word_embedding(self.word_embedding)
+                    cnn.initial()
 
                     saver = tf.train.Saver()
                     # Restore
                     saver.restore(sess, "/tmp/model/ckpt")
-                    print("Restore model information")
                     feed_dict = {
                         cnn.input_s1: s1,
                         cnn.input_s2: s2,
@@ -179,13 +179,32 @@ class CNN:
                     scores = sess.run(cnn.scores,feed_dict)
                 return scores[0]
 
+        top_k = 5
+        top = []
+
+        for i in range(len(self.answers)):
+            s1, s2 = Data.generate_cnn_sentence(question.decode("utf-8"), self.answers[i], self.word_dict,self.seq_length)
+            score = get_score(s1, s2)
+            heapq.heappush(top, (-score, str(i)))
+
+        print("Question: %s" % question)
+
+        # Generate Top K
+        for j in range(min(top_k, len(top))):
+            item = int(heapq.heappop(top)[1])
+            # print("Similar %d: %s" % (j + 1, self.quetions[item]))
+            print("CNN Response %d: %s" % (j + 1, self.answers[item]))
+
+        print("")
+
 
 
 
 def main():
     cnn = CNN()
     cnn.data_preparation()
-    cnn.train_dev()
+    # cnn.train_dev()
+    cnn.ask_response("有什么好的电脑么")
 
 
 if __name__ == "__main__":
