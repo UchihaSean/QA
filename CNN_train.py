@@ -14,9 +14,7 @@ import random
 
 class CNN:
 
-    def __init__(self):
-        # Parameters
-        # ==================================================
+    def __init__(self, top_k, questions = None, pred_questions = None, answers = None, pred_answers = None):
         self.train_sample_percentage = 0.9
         self.data_file = "Data/simple_pred_QA-pair.csv"
         self.filter_sizes = "3,4,5"
@@ -35,11 +33,21 @@ class CNN:
         self.embedding_dimension = 50
         self.neg_sample_ratio = 5
         self.epoch_num = 3000
+        self.quetions = questions
+        self.pred_questions = pred_questions
+        self.answers = answers
+        self.pred_answers = pred_answers
+        self.top_k = top_k
+        self.data_preparation()
 
     def data_preparation(self):
+        """
+        Read Data and split
+        """
         # Read Preprocessed Data
         print("Loading data...")
-        self.quetions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(self.data_file)
+        if self.quetions == None:
+            self.quetions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(self.data_file)
 
         self.word_dict, self.word_embedding = Data.generate_word_embedding(self.pred_questions, self.pred_answers, self.embedding_dimension)
 
@@ -61,8 +69,14 @@ class CNN:
         self.score_train, self.score_dev = self.score[:train_end], self.score[train_end:]
         print("Train/Dev split: {:d}/{:d}".format(len(self.score_train), len(self.score_dev)))
 
+        # Build word --> sentence dictionary
+        self.word_sentence_dict = Data.generate_word_sentence_dict(self.pred_answers)
+
 
     def train_dev(self):
+        """
+        Train CNN model and Score on the dev
+        """
         with tf.Graph().as_default():
             session_conf = tf.ConfigProto(
                 allow_soft_placement=self.allow_soft_placement,
@@ -154,8 +168,14 @@ class CNN:
                 print("Save model to "+save_path)
 
     def ask_response(self, question):
-
+        """
+        :param question: input a question
+        :return: top k response
+         """
         def get_score(s1, s2):
+            """
+            Get CNN similarity score based on two sentences
+            """
             with tf.Graph().as_default():
                 sess = tf.Session()
                 with sess.as_default():
@@ -179,32 +199,43 @@ class CNN:
                     scores = sess.run(cnn.scores,feed_dict)
                 return scores[0]
 
-        top_k = 5
         top = []
+        pred_q = Data.preprocessing([question.decode("utf-8")])
 
-        for i in range(len(self.answers)):
+        # Generate sentence id set which include at least one same word
+        sentence_id_set = set()
+        for j in range(len(pred_q[0])):
+            if pred_q[0][j] in self.word_sentence_dict:
+                sentence_id_set.update(self.word_sentence_dict[pred_q[0][j]])
+
+        print(len(sentence_id_set))
+        for i in sentence_id_set:
             s1, s2 = Data.generate_cnn_sentence(question.decode("utf-8"), self.answers[i], self.word_dict,self.seq_length)
             score = get_score(s1, s2)
+            # print(score)
             heapq.heappush(top, (-score, str(i)))
 
-        print("Question: %s" % question)
+        # print("Question: %s" % question)
 
+        response = []
         # Generate Top K
-        for j in range(min(top_k, len(top))):
+        for j in range(min(self.top_k, len(top))):
             item = int(heapq.heappop(top)[1])
             # print("Similar %d: %s" % (j + 1, self.quetions[item]))
-            print("CNN Response %d: %s" % (j + 1, self.answers[item]))
+            # print("CNN Response %d: %s" % (j + 1, self.answers[item]))
+            response.append(self.answers[item])
 
-        print("")
+        # print("")
+
+        return response
 
 
 
 
 def main():
     cnn = CNN()
-    cnn.data_preparation()
-    # cnn.train_dev()
-    cnn.ask_response("有什么好的电脑么")
+    cnn.train_dev()
+    # cnn.ask_response("有什么好的电脑么")
 
 
 if __name__ == "__main__":

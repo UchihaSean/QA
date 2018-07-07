@@ -4,10 +4,15 @@ import heapq
 import numpy as np
 import random
 
+
 class TFIDF:
-    def __init__(self):
+    def __init__(self, top_k, questions=None, pred_questions=None, answers=None, pred_answers=None):
         # Read Preprocessed Data
-        self.quetions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data("Data/pred_QA-pair.csv")
+        if questions == None:
+            self.quetions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(
+                "Data/pred_QA-pair.csv")
+        else:
+            self.quetions, self.pred_questions, self.answers, self.pred_answers = questions, pred_questions, answers, pred_answers
 
         pair = list(zip(self.quetions, self.pred_questions, self.answers, self.pred_answers))
         random.shuffle(pair)
@@ -18,13 +23,17 @@ class TFIDF:
         self.tf_idf_pred_questions = generate_tf_idf_list(self.pred_questions, self.idf_dict)
 
         # Build word --> sentence dictionary
-        self.word_sentence_dict = generate_word_sentence_dict(self.pred_questions)
+        self.word_sentence_dict = Data.generate_word_sentence_dict(self.pred_questions)
+        self.top_k = top_k
 
     def ask_response(self, question):
+        """
+        :param question: input a question
+        :return: top k response
+        """
         pred_q = Data.preprocessing([question.decode("utf-8")])
         tf_idf_pred_q = generate_tf_idf_list(pred_q, self.idf_dict)
 
-        top_k = 5
         top = []
 
         # Generate sentence id set which include at least one same word
@@ -38,19 +47,20 @@ class TFIDF:
             score = cosine_similarity(tf_idf_pred_q[0], self.tf_idf_pred_questions[j])
             heapq.heappush(top, (-score, str(j)))
 
-        print("Question: %s"% question)
+        # print("Question: %s" % question)
 
+        response = []
 
         # Generate Top K
-        for j in range(min(top_k, len(top))):
+        for j in range(min(self.top_k, len(top))):
             item = int(heapq.heappop(top)[1])
             # print("Similar %d: %s" % (j + 1, self.quetions[item]))
-            print("Response %d: %s" % (j+1,self.answers[item]))
+            # print("TFIDF Response %d: %s" % (j + 1, self.answers[item]))
+            response.append(self.answers[item])
 
-        print("")
+        # print("")
 
-
-
+        return response
 
 
 def generate_idf_dict(word_list):
@@ -94,20 +104,6 @@ def generate_tf_idf_list(sentences, idf_dict):
         tf_idf.append(dict)
 
     return tf_idf
-
-
-def generate_word_sentence_dict(sentences):
-    """
-    Build word --> sentence id dictionary
-    """
-    word_sentence_dict = {}
-    for i in range(len(sentences)):
-        for j in range(len(sentences[i])):
-            if sentences[i][j] in word_sentence_dict:
-                word_sentence_dict[sentences[i][j]].add(i)
-            else:
-                word_sentence_dict[sentences[i][j]] = {i}
-    return word_sentence_dict
 
 
 def cosine_similarity(dict_x, dict_y):
@@ -181,7 +177,7 @@ def main():
         output.write("Ground Truth: " + test_answers[i].encode("utf-8") + "\n")
 
         # Generate Top K
-        for j in range(min(top_k,len(top))):
+        for j in range(min(top_k, len(top))):
             item = int(heapq.heappop(top)[1])
             output.write("Our similar " + str(j + 1) + ": " + train_questions[item].encode("utf-8") + "\n")
             output.write("Our reply " + str(j + 1) + ": " + train_answers[item].encode("utf-8") + "\n")

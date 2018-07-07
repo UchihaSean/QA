@@ -5,22 +5,29 @@ import heapq
 import random
 
 class LM:
-    def __init__(self):
+    def __init__(self, top_k, questions = None, pred_questions = None, answers = None, pred_answers = None):
         # Read Preprocessed Data
-        self.quetions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(
+        if questions == None:
+            self.quetions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(
             "Data/pred_QA-pair.csv")
+        else:
+            self.quetions, self.pred_questions, self.answers, self.pred_answers = questions, pred_questions, answers, pred_answers
 
         pair = list(zip(self.quetions, self.pred_questions, self.answers, self.pred_answers))
         random.shuffle(pair)
         self.quetions, self.pred_questions, self.answers, self.pred_answers = zip(*pair)
 
         # Build word --> sentence dictionary
-        self.word_sentence_dict = generate_word_sentence_dict(self.pred_questions)
+        self.word_sentence_dict = Data.generate_word_sentence_dict(self.pred_questions)
+        self.top_k = top_k
 
     def ask_response(self, question):
+        """
+        :param question: input a question
+        :return: top k response
+        """
         pred_q = Data.preprocessing([question.decode("utf-8")])
 
-        top_k = 5
         top = []
 
         # Generate sentence id set which include at least one same word
@@ -34,15 +41,20 @@ class LM:
             score = LM_similarity(pred_q[0], self.pred_questions[j],len(self.pred_questions[j]))
             heapq.heappush(top, (-score, str(j)))
 
-        print("Question: %s" % question)
+        # print("Question: %s" % question)
+
+        response = []
 
         # Generate Top K
-        for j in range(min(top_k, len(top))):
+        for j in range(min(self.top_k, len(top))):
             item = int(heapq.heappop(top)[1])
             # print("Similar %d: %s" % (j + 1, self.quetions[item]))
-            print("Response %d: %s" % (j + 1, self.answers[item]))
+            # print("LM Response %d: %s" % (j + 1, self.answers[item]))
+            response.append(self.answers[item])
 
-        print("")
+        # print("")
+
+        return response
 
 
 
@@ -66,18 +78,6 @@ def LM_similarity(query, document, doc_len):
             score += np.log(1 + (doc_dict[word] + 0.0) / doc_len)
     return score
 
-def generate_word_sentence_dict(sentences):
-    """
-    Build word --> sentence id dictionary
-    """
-    word_sentence_dict = {}
-    for i in range(len(sentences)):
-        for j in range(len(sentences[i])):
-            if sentences[i][j] in word_sentence_dict:
-                word_sentence_dict[sentences[i][j]].add(i)
-            else:
-                word_sentence_dict[sentences[i][j]] = {i}
-    return word_sentence_dict
 
 
 def main():

@@ -88,6 +88,18 @@ def read_origin_data(input_file_name, output_file_name, stopwords_file="Data/Chi
 
     return questions, pred_questions, answers, pred_answers
 
+def generate_word_sentence_dict(sentences):
+    """
+    Build word --> sentence id dictionary
+    """
+    word_sentence_dict = {}
+    for i in range(len(sentences)):
+        for j in range(len(sentences[i])):
+            if sentences[i][j] in word_sentence_dict:
+                word_sentence_dict[sentences[i][j]].add(i)
+            else:
+                word_sentence_dict[sentences[i][j]] = {i}
+    return word_sentence_dict
 
 def read_pred_data(file_name):
     """
@@ -105,7 +117,7 @@ def read_pred_data(file_name):
             pred_answers.append(line[3].strip().decode("utf-8").split(" "))
 
             # Counter for test
-            if i > 100000: break
+            if i > 10000: break
 
     return quetions, pred_questions, answers, pred_answers
 
@@ -126,7 +138,6 @@ def padding_sentence(s1, s2, seq_length):
         min_length = min(len(s), seq_length)
         s2_padding[i][:min_length] = s[:min_length]
 
-    print("padding completed")
     return s1_padding, s2_padding
 
 def generate_word_embedding(questions, answers, dimension):
@@ -197,6 +208,22 @@ def generate_cnn_data(questions, answers, word_dict, neg_sample_ratio, seq_lengt
 
     return s1, s2, score
 
+def generate_cnn_sentence(question, answer, word_dict, seq_length):
+    s1, s2 = [], []
+    for i in range(len(question)):
+        if question[i] in word_dict:
+            s1.append(word_dict[question[i]])
+        else:
+            s1.append(0)
+
+    for i in range(len(answer)):
+        if answer[i] in word_dict:
+            s2.append(word_dict[answer[i]])
+        else:
+            s2.append(0)
+
+    s1, s2 = padding_sentence([s1], [s2], seq_length)
+    return s1, s2
 
 def get_stop_words(file_name):
     """
