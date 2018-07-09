@@ -162,7 +162,7 @@ def generate_word_embedding(questions, answers, dimension):
 
 def generate_cnn_data(questions, answers, word_dict, neg_sample_ratio, seq_length):
     """
-    Generate QA pair data
+    Generate QA pair with score
     """
     s1, s2, score = [], [], []
 
@@ -209,6 +209,9 @@ def generate_cnn_data(questions, answers, word_dict, neg_sample_ratio, seq_lengt
     return s1, s2, score
 
 def generate_cnn_sentence(question, answer, word_dict, seq_length):
+    """
+    Generate QA pair without score
+    """
     s1, s2 = [], []
     for i in range(len(question)):
         if question[i] in word_dict:
