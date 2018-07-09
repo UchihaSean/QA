@@ -3,10 +3,19 @@ from TFIDF import TFIDF
 from CNN_train import CNN
 from LM import LM
 import Data
+import time
 
 def main():
+    retrieval_data_start_time = time.clock()
     questions, pred_questions, answers, pred_answers = Data.read_pred_data("Data/pred_QA-pair.csv")
     top_k = 3
+
+    print("Retrieval Data Finished")
+
+    retrieval_data_end_time = time.clock()
+    print("Retrieval Data cost %f" % (retrieval_data_end_time-retrieval_data_start_time))
+
+    response_start_time = time.clock()
 
     lm =  LM(top_k,questions,pred_questions, answers, pred_answers)
     tfidf = TFIDF(top_k, questions, pred_questions, answers, pred_answers)
@@ -26,7 +35,10 @@ def main():
     for i in range(top_k):
         print("CNN response %d: %s" %(i+1, cnn_response[i]))
 
+    print("Response Finished")
 
+    response_end_time = time.clock()
+    print("Response cost %f" %(response_end_time-response_start_time))
 
 
 
