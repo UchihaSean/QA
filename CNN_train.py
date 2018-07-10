@@ -15,7 +15,8 @@ import random
 class CNN:
 
     def __init__(self, top_k, questions = None, pred_questions = None, answers = None, pred_answers = None):
-        self.train_sample_percentage = 0.9
+        self.train_sample_percentage = 0.8
+        self.dev_sample_percentage = 0.1
         self.data_file = "Data/simple_pred_QA-pair.csv"
         self.filter_sizes = "3,4,5"
         self.num_filters = 128
@@ -32,7 +33,7 @@ class CNN:
         self.log_device_placement = False
         self.embedding_dimension = 50
         self.neg_sample_ratio = 5
-        self.epoch_num = 3000
+        self.epoch_num = 1000
         self.questions = questions
         self.pred_questions = pred_questions
         self.answers = answers
@@ -61,13 +62,14 @@ class CNN:
 
         sample_num = len(self.score)
         train_end = int(sample_num * self.train_sample_percentage)
+        dev_end = int(sample_num * (self.train_sample_percentage+self.dev_sample_percentage))
 
         # Split train/test set
         # TODO: This is very crude, should use cross-validation
-        self.s1_train, self.s1_dev = self.s1[:train_end], self.s1[train_end:]
-        self.s2_train, self.s2_dev = self.s2[:train_end], self.s2[train_end:]
-        self.score_train, self.score_dev = self.score[:train_end], self.score[train_end:]
-        print("Train/Dev split: {:d}/{:d}".format(len(self.score_train), len(self.score_dev)))
+        self.s1_train, self.s1_dev, self.s1_test = self.s1[:train_end], self.s1[train_end:dev_end], self.s1[dev_end:]
+        self.s2_train, self.s2_dev, self.s2_test = self.s2[:train_end], self.s2[train_end:dev_end], self.s2[dev_end:]
+        self.score_train, self.score_dev, self.score_test = self.score[:train_end], self.score[train_end:dev_end], self.score[dev_end:]
+        print("Train/Dev/Test split: {:d}/{:d}/{:d}".format(len(self.score_train), len(self.score_dev), len(self.score_test)))
 
         # Build word --> sentence dictionary
         self.word_sentence_dict = Data.generate_word_sentence_dict(self.pred_answers)
@@ -88,10 +90,9 @@ class CNN:
                     num_classes=self.num_classes,
                     filter_sizes=list(map(int, self.filter_sizes.split(","))),
                     num_filters=self.num_filters,
+                    word_embedding= self.word_embedding,
                     l2_reg_lambda=self.l2_reg_lambda)
 
-                cnn.set_word_embedding(self.word_embedding)
-                cnn.initial()
 
                 # Define Training procedure
                 global_step = tf.Variable(0, name="global_step", trainable=False)
@@ -110,6 +111,10 @@ class CNN:
                 saver.restore(sess, "/tmp/model/ckpt")
                 print("Restore model information")
 
+                # Embedding output
+                # output = open("Data/word_embedding_before.txt", 'w')
+                # output.write(sess.run(cnn.W))
+                # output.close()
 
 
 
@@ -166,6 +171,11 @@ class CNN:
 
                 save_path = saver.save(sess, "/tmp/model/ckpt")
                 print("Save model to "+save_path)
+
+                # Embedding output
+                # output = open("Data/word_embedding_after.txt", 'w')
+                # output.write(sess.run(cnn.W))
+                # output.close()
 
     def ask_response(self, question):
         """
@@ -235,9 +245,8 @@ class CNN:
 def main():
     questions, pred_questions, answers, pred_answers = Data.read_pred_data("Data/pred_QA-pair.csv")
     cnn = CNN(3, questions, pred_questions, answers, pred_answers)
-    # cnn = CNN(3)
-    # cnn.train_dev()
-    cnn.ask_response("有什么好的电脑么")
+    cnn.train_dev()
+    # cnn.ask_response("有什么好的电脑么")
 
 
 if __name__ == "__main__":

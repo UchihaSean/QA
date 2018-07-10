@@ -7,7 +7,7 @@ class TextCNN(object):
     Uses an embedding layer, followed by a convolutional, max-pooling and softmax layer.
     """
     def __init__(
-      self, sequence_length, num_classes, filter_sizes, num_filters, l2_reg_lambda=0.0):
+      self, sequence_length, num_classes, filter_sizes, num_filters, word_embedding, l2_reg_lambda=0.0):
 
         # Placeholders for input, output and dropout
         self.input_s1 = tf.placeholder(tf.int32, [None, sequence_length], name="input_s1")
@@ -18,21 +18,17 @@ class TextCNN(object):
         self.num_filters = num_filters
         self.sequence_length = sequence_length
         self.num_classes = num_classes
+        self.word_embedding = word_embedding
         self.l2_reg_lambda = l2_reg_lambda
         # Keeping track of l2 regularization loss (optional)
         self.l2_loss = tf.constant(0.0)
 
-
-
-    def set_word_embedding(self, word_embedding):
-        self.word_embedding = word_embedding
-
-    def initial(self):
         self.init_weight()
         self.inference()
         self.add_dropout()
         self.add_output()
         self.add_loss_acc()
+
 
     def init_weight(self):
         # Embedding layer
