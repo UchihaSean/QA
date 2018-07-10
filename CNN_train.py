@@ -14,7 +14,7 @@ import random
 
 class CNN:
 
-    def __init__(self, top_k, questions = None, pred_questions = None, answers = None, pred_answers = None):
+    def __init__(self, top_k = 3, questions = None, pred_questions = None, answers = None, pred_answers = None):
         self.train_sample_percentage = 0.8
         self.dev_sample_percentage = 0.1
         self.data_file = "Data/simple_pred_QA-pair.csv"
@@ -33,12 +33,13 @@ class CNN:
         self.log_device_placement = False
         self.embedding_dimension = 50
         self.neg_sample_ratio = 5
-        self.epoch_num = 1000
+        self.epoch_num = 10000
         self.questions = questions
         self.pred_questions = pred_questions
         self.answers = answers
         self.pred_answers = pred_answers
         self.top_k = top_k
+        random.seed(12345)
         self.data_preparation()
 
     def data_preparation(self):
@@ -108,8 +109,8 @@ class CNN:
                 sess.run(tf.local_variables_initializer())
 
                 # Restore
-                saver.restore(sess, "/tmp/model/ckpt")
-                print("Restore model information")
+                # saver.restore(sess, "/tmp/model/ckpt")
+                # print("Restore model information")
 
                 # Embedding output
                 # output = open("Data/word_embedding_before.txt", 'w')
@@ -151,8 +152,7 @@ class CNN:
                         feed_dict)
                     time_str = datetime.datetime.now().isoformat()
                     print("{}: step {}, loss {:g}, pearson {:g}".format(time_str, step, loss, pearson))
-                    # if writer:
-                    #     writer.add_summary(summaries, step)
+
 
 
                 # Generate batches
@@ -176,6 +176,51 @@ class CNN:
                 # output = open("Data/word_embedding_after.txt", 'w')
                 # output.write(sess.run(cnn.W))
                 # output.close()
+    def test(self):
+        with tf.Graph().as_default():
+            session_conf = tf.ConfigProto(
+                allow_soft_placement=self.allow_soft_placement,
+                log_device_placement=self.log_device_placement)
+            sess = tf.Session(config=session_conf)
+            with sess.as_default():
+                cnn = TextCNN(
+                    sequence_length=self.seq_length,
+                    num_classes=self.num_classes,
+                    filter_sizes=list(map(int, self.filter_sizes.split(","))),
+                    num_filters=self.num_filters,
+                    word_embedding= self.word_embedding,
+                    l2_reg_lambda=self.l2_reg_lambda)
+
+
+                saver = tf.train.Saver()
+
+                # Initialize all variables
+                sess.run(tf.global_variables_initializer())
+                sess.run(tf.local_variables_initializer())
+
+                # Restore
+                saver.restore(sess, "/tmp/model/ckpt")
+                print("Restore model information")
+
+                def test_step(s1, s2, score):
+                    """
+                    Evaluates model on a dev set
+                    """
+                    feed_dict = {
+                        cnn.input_s1: s1,
+                        cnn.input_s2: s2,
+                        cnn.input_y: score,
+                        cnn.dropout_keep_prob: 1.0
+                    }
+                    loss, pearson = sess.run(
+                        [cnn.real_loss, cnn.pearson],
+                        feed_dict)
+                    time_str = datetime.datetime.now().isoformat()
+                    print("{}: loss {:g}, pearson {:g}".format(time_str, loss, pearson))
+
+                print("\nTest")
+                test_step(self.s1_test, self.s2_test, self.score_test)
+
 
     def ask_response(self, question):
         """
@@ -195,8 +240,6 @@ class CNN:
                         filter_sizes=list(map(int, self.filter_sizes.split(","))),
                         num_filters=self.num_filters,
                         l2_reg_lambda=self.l2_reg_lambda)
-                    cnn.set_word_embedding(self.word_embedding)
-                    cnn.initial()
 
                     saver = tf.train.Saver()
                     # Restore
@@ -245,7 +288,8 @@ class CNN:
 def main():
     questions, pred_questions, answers, pred_answers = Data.read_pred_data("Data/pred_QA-pair.csv")
     cnn = CNN(3, questions, pred_questions, answers, pred_answers)
-    cnn.train_dev()
+    # cnn.train_dev()
+    cnn.test()
     # cnn.ask_response("有什么好的电脑么")
 
 

@@ -95,6 +95,7 @@ class TextCNN(object):
         with tf.name_scope("loss"):
             losses = tf.square(self.scores - self.input_y)
             self.loss = tf.reduce_mean(losses) + self.l2_reg_lambda * self.l2_loss
+            self.real_loss = tf.reduce_mean(losses)
 
         # Accuracy
         with tf.name_scope("pearson"):
