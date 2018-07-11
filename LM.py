@@ -6,16 +6,20 @@ import random
 
 
 class LM:
-    def __init__(self, top_k, questions=None, pred_questions=None, answers=None, pred_answers=None, word_sentence_dict = None):
+    def __init__(self, top_k, questions=None, pred_questions=None, answers=None, pred_answers=None,
+                 word_sentence_dict=None):
         # Read Preprocessed Data
         if questions == None:
             self.questions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(
                 "Data/pred_QA-pair.csv")
+        else:
+            self.questions, self.pred_questions, self.answers, self.pred_answers = questions, pred_questions, answers, pred_answers
+
+        if word_sentence_dict == None:
             # Build word --> sentence dictionary
             self.word_sentence_dict = Data.generate_word_sentence_dict(self.pred_questions)
-
         else:
-            self.questions, self.pred_questions, self.answers, self.pred_answers, self.word_sentence_dict = questions, pred_questions, answers, pred_answers, word_sentence_dict
+            self.word_sentence_dict = word_sentence_dict
 
         self.top_k = top_k
 
@@ -133,5 +137,5 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    lm = LM()
+    lm = LM(3)
     lm.ask_response("有什么好的电脑么")

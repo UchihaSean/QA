@@ -15,7 +15,8 @@ import random
 
 class CNN:
 
-    def __init__(self, top_k=3, questions=None, pred_questions=None, answers=None, pred_answers=None, word_sentence_dict= None, isTrain = True):
+    def __init__(self, top_k=3, questions=None, pred_questions=None, answers=None, pred_answers=None,
+                 word_sentence_dict=None, isTrain=True):
 
         # Parameters
         self.train_sample_percentage = 0.8
@@ -59,13 +60,13 @@ class CNN:
         print("Loading data...")
         if self.questions == None:
             self.questions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(self.data_file)
+        if self.word_sentence_dict == None:
             # Build word --> sentence dictionary
             self.word_sentence_dict = Data.generate_word_sentence_dict(self.pred_answers)
         # self.word_dict, self.word_embedding = Data.generate_word_embedding(self.pred_questions, self.pred_answers, self.embedding_dimension)
 
         # Get word embeding
         self.word_dict, self.word_embedding = Data.read_single_word_embedding("Data/single_word_embedding")
-
 
         if not isTrain: return
         # Generate Data for CNN
@@ -91,10 +92,6 @@ class CNN:
                                                                                                         dev_end:]
         print("Train/Dev/Test split: {:d}/{:d}/{:d}".format(len(self.score_train), len(self.score_dev),
                                                             len(self.score_test)))
-
-
-
-
 
     def train_dev(self):
         """
@@ -234,7 +231,7 @@ class CNN:
                 print("\nTest")
                 test_step(self.s1_test, self.s2_test, self.score_test)
 
-    def ask_response(self, question, tfidf_response_id = None):
+    def ask_response(self, question, tfidf_response_id=None):
         """
         :param question: input a question, tfidf top K results
         :return: top k response

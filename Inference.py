@@ -23,24 +23,23 @@ def main():
 
     response_start_time = time.clock()
 
-    # lm = LM(top_k, questions, pred_questions, answers, pred_answers, word_sentence_dict)
-    tfidf = TFIDF(top_k*40, questions, pred_questions, answers, pred_answers, word_sentence_dict)
-    cnn = CNN(top_k, questions,pred_questions, answers, pred_answers, word_sentence_dict, isTrain=False)
+    lm = LM(top_k, questions, pred_questions, answers, pred_answers, word_sentence_dict)
+    tfidf = TFIDF(top_k * 40, questions, pred_questions, answers, pred_answers, word_sentence_dict)
+    cnn = CNN(top_k, questions, pred_questions, answers, pred_answers, word_sentence_dict, isTrain=False)
 
     qs_input = "这个笔记本好用么"
     print("Question : %s" % qs_input)
 
-    # _, lm_response = lm.ask_response(qs_input)
+    _, lm_response = lm.ask_response(qs_input)
     tfidf_response_id, tfidf_response = tfidf.ask_response(qs_input)
     cnn_response = cnn.ask_response(qs_input, tfidf_response_id)
 
-
-    # for i in range(top_k):
-    #     print("LM response %d: %s" % (i + 1, lm_response[i]))
+    for i in range(top_k):
+        print("LM response %d: %s" % (i + 1, lm_response[i]))
     for i in range(top_k):
         print("TFIDF response %d: %s" % (i + 1, tfidf_response[i]))
     for i in range(top_k):
-        print("CNN response %d: %s" %(i+1, cnn_response[i]))
+        print("CNN response %d: %s" % (i + 1, cnn_response[i]))
 
     print("Response Finished")
 
