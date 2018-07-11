@@ -15,7 +15,7 @@ import random
 
 class CNN:
 
-    def __init__(self, top_k=3, questions=None, pred_questions=None, answers=None, pred_answers=None):
+    def __init__(self, top_k=3, questions=None, pred_questions=None, answers=None, pred_answers=None, word_sentence_dict= None, isTrain = True):
 
         # Parameters
         self.train_sample_percentage = 0.8
@@ -41,15 +41,16 @@ class CNN:
         self.pred_questions = pred_questions
         self.answers = answers
         self.pred_answers = pred_answers
+        self.word_sentence_dict = word_sentence_dict
         self.top_k = top_k
 
         # Random seed
         random.seed(12345)
 
         # Data
-        self.data_preparation()
+        self.data_preparation(isTrain)
 
-    def data_preparation(self):
+    def data_preparation(self, isTrain):
         """
         Read Data and split
         """
@@ -58,12 +59,15 @@ class CNN:
         print("Loading data...")
         if self.questions == None:
             self.questions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(self.data_file)
-
+            # Build word --> sentence dictionary
+            self.word_sentence_dict = Data.generate_word_sentence_dict(self.pred_answers)
         # self.word_dict, self.word_embedding = Data.generate_word_embedding(self.pred_questions, self.pred_answers, self.embedding_dimension)
 
         # Get word embeding
         self.word_dict, self.word_embedding = Data.read_single_word_embedding("Data/single_word_embedding")
 
+
+        if not isTrain: return
         # Generate Data for CNN
         self.s1, self.s2, self.score = Data.generate_cnn_data(self.pred_questions, self.pred_answers, self.word_dict,
                                                               self.neg_sample_ratio, self.seq_length)
@@ -88,8 +92,9 @@ class CNN:
         print("Train/Dev/Test split: {:d}/{:d}/{:d}".format(len(self.score_train), len(self.score_dev),
                                                             len(self.score_test)))
 
-        # Build word --> sentence dictionary
-        self.word_sentence_dict = Data.generate_word_sentence_dict(self.pred_answers)
+
+
+
 
     def train_dev(self):
         """
@@ -247,6 +252,7 @@ class CNN:
                         num_classes=self.num_classes,
                         filter_sizes=list(map(int, self.filter_sizes.split(","))),
                         num_filters=self.num_filters,
+                        word_embedding=self.word_embedding,
                         l2_reg_lambda=self.l2_reg_lambda)
 
                     saver = tf.train.Saver()

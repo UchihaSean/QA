@@ -3,7 +3,7 @@ import csv
 import numpy as np
 import random
 import time
-
+random.seed(12345)
 
 class dataset(object):
     def __init__(self, s1, s2, label):
@@ -108,13 +108,13 @@ def read_pred_data(file_name):
     """
     Read file with preprocessed data
     """
-    quetions, pred_questions, answers, pred_answers = [], [], [], []
+    questions, pred_questions, answers, pred_answers = [], [], [], []
     with open(file_name, 'r') as csvfile:
         file_info = csv.reader(csvfile)
         # Store the information
         for i, line in enumerate(file_info):
             if i == 0: continue
-            quetions.append(line[0].strip().decode("utf-8"))
+            questions.append(line[0].strip().decode("utf-8"))
             pred_questions.append(line[1].strip().decode("utf-8").split(" "))
             answers.append(line[2].strip().decode("utf-8"))
             pred_answers.append(line[3].strip().decode("utf-8").split(" "))
@@ -122,7 +122,12 @@ def read_pred_data(file_name):
             # Counter for test
             # if i > 10000: break
 
-    return quetions, pred_questions, answers, pred_answers
+    # Random
+    pair = list(zip(questions, pred_questions, answers, pred_answers))
+    random.shuffle(pair)
+    questions, pred_questions, answers, pred_answers = zip(*pair)
+
+    return questions, pred_questions, answers, pred_answers
 
 
 def padding_sentence(s1, s2, seq_length):

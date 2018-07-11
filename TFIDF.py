@@ -6,24 +6,23 @@ import random
 
 
 class TFIDF:
-    def __init__(self, top_k, questions=None, pred_questions=None, answers=None, pred_answers=None):
+    def __init__(self, top_k, questions=None, pred_questions=None, answers=None, pred_answers=None, word_sentence_dict = None):
         # Read Preprocessed Data
         if questions == None:
             self.questions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(
                 "Data/pred_QA-pair.csv")
+            # Build word --> sentence dictionary
+            self.word_sentence_dict = Data.generate_word_sentence_dict(self.pred_questions)
         else:
-            self.questions, self.pred_questions, self.answers, self.pred_answers = questions, pred_questions, answers, pred_answers
+            self.questions, self.pred_questions, self.answers, self.pred_answers, self.word_sentence_dict = questions, pred_questions, answers, pred_answers, word_sentence_dict
 
-        pair = list(zip(self.questions, self.pred_questions, self.answers, self.pred_answers))
-        random.shuffle(pair)
-        self.questions, self.pred_questions, self.answers, self.pred_answers = zip(*pair)
+
 
         # Calculate TF-IDF
         self.idf_dict = generate_idf_dict(self.pred_questions)
         self.tf_idf_pred_questions = generate_tf_idf_list(self.pred_questions, self.idf_dict)
 
-        # Build word --> sentence dictionary
-        self.word_sentence_dict = Data.generate_word_sentence_dict(self.pred_questions)
+
         self.top_k = top_k
 
     def ask_response(self, question):
