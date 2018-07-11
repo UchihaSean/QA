@@ -29,7 +29,7 @@ class TFIDF:
     def ask_response(self, question):
         """
         :param question: input a question
-        :return: top k response
+        :return: top k id and response
         """
         pred_q = Data.preprocessing([question.decode("utf-8")])
         tf_idf_pred_q = generate_tf_idf_list(pred_q, self.idf_dict)
@@ -50,17 +50,19 @@ class TFIDF:
         # print("Question: %s" % question)
 
         response = []
+        response_id = []
 
         # Generate Top K
         for j in range(min(self.top_k, len(top))):
             item = int(heapq.heappop(top)[1])
             # print("Similar %d: %s" % (j + 1, self.questions[item]))
             # print("TFIDF Response %d: %s" % (j + 1, self.answers[item]))
+            response_id.append(item)
             response.append(self.answers[item])
 
         # print("")
 
-        return response
+        return response_id, response
 
 
 def generate_idf_dict(word_list):

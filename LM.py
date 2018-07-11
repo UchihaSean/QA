@@ -4,12 +4,13 @@ import numpy as np
 import heapq
 import random
 
+
 class LM:
-    def __init__(self, top_k, questions = None, pred_questions = None, answers = None, pred_answers = None):
+    def __init__(self, top_k, questions=None, pred_questions=None, answers=None, pred_answers=None):
         # Read Preprocessed Data
         if questions == None:
             self.questions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(
-            "Data/pred_QA-pair.csv")
+                "Data/pred_QA-pair.csv")
         else:
             self.questions, self.pred_questions, self.answers, self.pred_answers = questions, pred_questions, answers, pred_answers
 
@@ -24,7 +25,7 @@ class LM:
     def ask_response(self, question):
         """
         :param question: input a question
-        :return: top k response
+        :return: top k id and response
         """
         pred_q = Data.preprocessing([question.decode("utf-8")])
 
@@ -38,12 +39,13 @@ class LM:
 
         # Generate cosine similarity score
         for j in sentence_id_set:
-            score = LM_similarity(pred_q[0], self.pred_questions[j],len(self.pred_questions[j]))
+            score = LM_similarity(pred_q[0], self.pred_questions[j], len(self.pred_questions[j]))
             heapq.heappush(top, (-score, str(j)))
 
         # print("Question: %s" % question)
 
         response = []
+        response_id = []
 
         # Generate Top K
         for j in range(min(self.top_k, len(top))):
@@ -51,11 +53,11 @@ class LM:
             # print("Similar %d: %s" % (j + 1, self.questions[item]))
             # print("LM Response %d: %s" % (j + 1, self.answers[item]))
             response.append(self.answers[item])
+            response_id.append(item)
 
         # print("")
 
-        return response
-
+        return response_id, response
 
 
 def LM_similarity(query, document, doc_len):
@@ -77,7 +79,6 @@ def LM_similarity(query, document, doc_len):
         if word in doc_dict:
             score += np.log(1 + (doc_dict[word] + 0.0) / doc_len)
     return score
-
 
 
 def main():
@@ -117,7 +118,7 @@ def main():
 
         # Generate LM similarity Score
         for j in sentence_id_set:
-            score = LM_similarity(test_pred_questions[i],train_pred_questions[j], len(train_pred_questions[j]))
+            score = LM_similarity(test_pred_questions[i], train_pred_questions[j], len(train_pred_questions[j]))
             heapq.heappush(top, (-score, str(j)))
 
         output.write("Question: " + test_questions[i].encode("utf-8") + "\n")
@@ -133,10 +134,7 @@ def main():
     output.close()
 
 
-
-
-
-if __name__=="__main__":
+if __name__ == "__main__":
     # main()
     lm = LM()
     lm.ask_response("有什么好的电脑么")

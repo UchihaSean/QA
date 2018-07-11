@@ -120,7 +120,7 @@ def read_pred_data(file_name):
             pred_answers.append(line[3].strip().decode("utf-8").split(" "))
 
             # Counter for test
-            if i > 10000: break
+            # if i > 10000: break
 
     return quetions, pred_questions, answers, pred_answers
 
@@ -312,9 +312,10 @@ def read_single_word_embedding(file_name):
 
     file.close()
     end = time.clock()
-    print("Read Single Word Embedding Cost %f" % (end-start))
+    print("Read Single Word Embedding Cost %f" % (end - start))
 
     return word_dict, np.array(word_embedding)
+
 
 def calc_word_in_dict_percentage():
     word_dict, _ = read_single_word_embedding("Data/single_word_embedding")
@@ -330,15 +331,12 @@ def calc_word_in_dict_percentage():
 
 
 def main():
-
     # read_origin_data("Data/QA-pair","Data/simple_pred_QA-pair.csv", stopwords_file="Data/Simple Chinese Stop Words.txt")
     # stop_words = get_stop_words("Data/Chinese Stop Words")
     # pred_conversations = preprocessing([u'你好？！你呢'])
     # read_pred_data("Data/pred_QA-pair.csv")
     # extract_single_word_embedding("Data/word_embedding","Data/single_word_embedding")
     calc_word_in_dict_percentage()
-
-
 
 
 if __name__ == "__main__":

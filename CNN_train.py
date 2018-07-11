@@ -12,9 +12,10 @@ import Data
 from CNN_model import TextCNN
 import random
 
+
 class CNN:
 
-    def __init__(self, top_k = 3, questions = None, pred_questions = None, answers = None, pred_answers = None):
+    def __init__(self, top_k=3, questions=None, pred_questions=None, answers=None, pred_answers=None):
 
         # Parameters
         self.train_sample_percentage = 0.8
@@ -64,7 +65,8 @@ class CNN:
         self.word_dict, self.word_embedding = Data.read_single_word_embedding("Data/single_word_embedding")
 
         # Generate Data for CNN
-        self.s1, self.s2, self.score = Data.generate_cnn_data(self.pred_questions, self.pred_answers, self.word_dict, self.neg_sample_ratio, self.seq_length)
+        self.s1, self.s2, self.score = Data.generate_cnn_data(self.pred_questions, self.pred_answers, self.word_dict,
+                                                              self.neg_sample_ratio, self.seq_length)
 
         # Shuffle data with seed
         pair = list(zip(self.s1, self.s2, self.score))
@@ -74,18 +76,20 @@ class CNN:
 
         sample_num = len(self.score)
         train_end = int(sample_num * self.train_sample_percentage)
-        dev_end = int(sample_num * (self.train_sample_percentage+self.dev_sample_percentage))
+        dev_end = int(sample_num * (self.train_sample_percentage + self.dev_sample_percentage))
 
         # Split train/test set
         # TODO: This is very crude, should use cross-validation
         self.s1_train, self.s1_dev, self.s1_test = self.s1[:train_end], self.s1[train_end:dev_end], self.s1[dev_end:]
         self.s2_train, self.s2_dev, self.s2_test = self.s2[:train_end], self.s2[train_end:dev_end], self.s2[dev_end:]
-        self.score_train, self.score_dev, self.score_test = self.score[:train_end], self.score[train_end:dev_end], self.score[dev_end:]
-        print("Train/Dev/Test split: {:d}/{:d}/{:d}".format(len(self.score_train), len(self.score_dev), len(self.score_test)))
+        self.score_train, self.score_dev, self.score_test = self.score[:train_end], self.score[
+                                                                                    train_end:dev_end], self.score[
+                                                                                                        dev_end:]
+        print("Train/Dev/Test split: {:d}/{:d}/{:d}".format(len(self.score_train), len(self.score_dev),
+                                                            len(self.score_test)))
 
         # Build word --> sentence dictionary
         self.word_sentence_dict = Data.generate_word_sentence_dict(self.pred_answers)
-
 
     def train_dev(self):
         """
@@ -102,16 +106,14 @@ class CNN:
                     num_classes=self.num_classes,
                     filter_sizes=list(map(int, self.filter_sizes.split(","))),
                     num_filters=self.num_filters,
-                    word_embedding= self.word_embedding,
+                    word_embedding=self.word_embedding,
                     l2_reg_lambda=self.l2_reg_lambda)
-
 
                 # Define Training procedure
                 global_step = tf.Variable(0, name="global_step", trainable=False)
                 optimizer = tf.train.AdamOptimizer(1e-3)
                 grads_and_vars = optimizer.compute_gradients(cnn.loss)
                 train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
-
 
                 saver = tf.train.Saver()
 
@@ -127,8 +129,6 @@ class CNN:
                 # output = open("Data/word_embedding_before.txt", 'w')
                 # output.write(sess.run(cnn.W))
                 # output.close()
-
-
 
                 def train_step(s1, s2, score):
                     """
@@ -147,7 +147,6 @@ class CNN:
                     print("{}: step {}, loss {:g}, pearson {:g}".format(time_str, step, loss, pearson))
                     # train_summary_writer.add_summary(summaries, step)
 
-
                 def dev_step(s1, s2, score):
                     """
                     Evaluates model on a dev set
@@ -164,8 +163,6 @@ class CNN:
                     time_str = datetime.datetime.now().isoformat()
                     print("{}: step {}, loss {:g}, pearson {:g}".format(time_str, step, loss, pearson))
 
-
-
                 # Generate batches
                 STS_train = Data.dataset(s1=self.s1_train, s2=self.s2_train, label=self.score_train)
                 # Training loop. For each batch...
@@ -181,12 +178,13 @@ class CNN:
                         print("")
 
                 save_path = saver.save(sess, "/tmp/model/ckpt")
-                print("Save model to "+save_path)
+                print("Save model to " + save_path)
 
                 # Embedding output
                 # output = open("Data/word_embedding_after.txt", 'w')
                 # output.write(sess.run(cnn.W))
                 # output.close()
+
     def test(self):
         with tf.Graph().as_default():
             session_conf = tf.ConfigProto(
@@ -199,9 +197,8 @@ class CNN:
                     num_classes=self.num_classes,
                     filter_sizes=list(map(int, self.filter_sizes.split(","))),
                     num_filters=self.num_filters,
-                    word_embedding= self.word_embedding,
+                    word_embedding=self.word_embedding,
                     l2_reg_lambda=self.l2_reg_lambda)
-
 
                 saver = tf.train.Saver()
 
@@ -232,12 +229,12 @@ class CNN:
                 print("\nTest")
                 test_step(self.s1_test, self.s2_test, self.score_test)
 
-
-    def ask_response(self, question):
+    def ask_response(self, question, tfidf_response_id = None):
         """
-        :param question: input a question
+        :param question: input a question, tfidf top K results
         :return: top k response
          """
+
         def get_score(s1, s2):
             """
             Get CNN similarity score based on two sentences
@@ -260,7 +257,7 @@ class CNN:
                         cnn.input_s2: s2,
                         cnn.dropout_keep_prob: 1.0
                     }
-                    scores = sess.run(cnn.scores,feed_dict)
+                    scores = sess.run(cnn.scores, feed_dict)
                 return scores[0]
 
         top = []
@@ -268,13 +265,17 @@ class CNN:
 
         # Generate sentence id set which include at least one same word
         sentence_id_set = set()
-        for j in range(len(pred_q[0])):
-            if pred_q[0][j] in self.word_sentence_dict:
-                sentence_id_set.update(self.word_sentence_dict[pred_q[0][j]])
+        if tfidf_response_id == None:
+            for j in range(len(pred_q[0])):
+                if pred_q[0][j] in self.word_sentence_dict:
+                    sentence_id_set.update(self.word_sentence_dict[pred_q[0][j]])
+        else:
+            sentence_id_set.update(tfidf_response_id)
 
         print(len(sentence_id_set))
         for i in sentence_id_set:
-            s1, s2 = Data.generate_cnn_sentence(question.decode("utf-8"), self.answers[i], self.word_dict,self.seq_length)
+            s1, s2 = Data.generate_cnn_sentence(question.decode("utf-8"), self.answers[i], self.word_dict,
+                                                self.seq_length)
             score = get_score(s1, s2)
             # print(score)
             heapq.heappush(top, (-score, str(i)))
@@ -292,8 +293,6 @@ class CNN:
         # print("")
 
         return response
-
-
 
 
 def main():
