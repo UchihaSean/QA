@@ -299,8 +299,8 @@ class CNN:
 def main():
     questions, pred_questions, answers, pred_answers = Data.read_pred_data("Data/pred_QA-pair.csv")
     cnn = CNN(3, questions, pred_questions, answers, pred_answers)
-    cnn.train_dev()
-    # cnn.test()
+    # cnn.train_dev()
+    cnn.test()
     # cnn.ask_response("有什么好的电脑么")
 
 
