@@ -15,6 +15,8 @@ import random
 class CNN:
 
     def __init__(self, top_k = 3, questions = None, pred_questions = None, answers = None, pred_answers = None):
+
+        # Parameters
         self.train_sample_percentage = 0.8
         self.dev_sample_percentage = 0.1
         self.data_file = "Data/simple_pred_QA-pair.csv"
@@ -31,7 +33,7 @@ class CNN:
         self.num_checkpoints = 5
         self.allow_soft_placement = True
         self.log_device_placement = False
-        self.embedding_dimension = 50
+        self.embedding_dimension = 300
         self.neg_sample_ratio = 5
         self.epoch_num = 10000
         self.questions = questions
@@ -39,23 +41,32 @@ class CNN:
         self.answers = answers
         self.pred_answers = pred_answers
         self.top_k = top_k
+
+        # Random seed
         random.seed(12345)
+
+        # Data
         self.data_preparation()
 
     def data_preparation(self):
         """
         Read Data and split
         """
+
         # Read Preprocessed Data
         print("Loading data...")
         if self.questions == None:
             self.questions, self.pred_questions, self.answers, self.pred_answers = Data.read_pred_data(self.data_file)
 
-        self.word_dict, self.word_embedding = Data.generate_word_embedding(self.pred_questions, self.pred_answers, self.embedding_dimension)
+        # self.word_dict, self.word_embedding = Data.generate_word_embedding(self.pred_questions, self.pred_answers, self.embedding_dimension)
 
+        # Get word embeding
+        self.word_dict, self.word_embedding = Data.read_single_word_embedding("Data/single_word_embedding")
+
+        # Generate Data for CNN
         self.s1, self.s2, self.score = Data.generate_cnn_data(self.pred_questions, self.pred_answers, self.word_dict, self.neg_sample_ratio, self.seq_length)
 
-
+        # Shuffle data with seed
         pair = list(zip(self.s1, self.s2, self.score))
         random.shuffle(pair)
         self.s1, self.s2, self.score = zip(*pair)
@@ -288,8 +299,8 @@ class CNN:
 def main():
     questions, pred_questions, answers, pred_answers = Data.read_pred_data("Data/pred_QA-pair.csv")
     cnn = CNN(3, questions, pred_questions, answers, pred_answers)
-    # cnn.train_dev()
-    cnn.test()
+    cnn.train_dev()
+    # cnn.test()
     # cnn.ask_response("有什么好的电脑么")
 
 

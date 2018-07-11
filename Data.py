@@ -2,6 +2,7 @@
 import csv
 import numpy as np
 import random
+import time
 
 
 class dataset(object):
@@ -88,6 +89,7 @@ def read_origin_data(input_file_name, output_file_name, stopwords_file="Data/Chi
 
     return questions, pred_questions, answers, pred_answers
 
+
 def generate_word_sentence_dict(sentences):
     """
     Build word --> sentence id dictionary
@@ -100,6 +102,7 @@ def generate_word_sentence_dict(sentences):
             else:
                 word_sentence_dict[sentences[i][j]] = {i}
     return word_sentence_dict
+
 
 def read_pred_data(file_name):
     """
@@ -121,6 +124,7 @@ def read_pred_data(file_name):
 
     return quetions, pred_questions, answers, pred_answers
 
+
 def padding_sentence(s1, s2, seq_length):
     """
     Padding each sentence to the max sentence length with <unk> 0
@@ -139,6 +143,7 @@ def padding_sentence(s1, s2, seq_length):
         s2_padding[i][:min_length] = s[:min_length]
 
     return s1_padding, s2_padding
+
 
 def generate_word_embedding(questions, answers, dimension):
     """
@@ -208,6 +213,7 @@ def generate_cnn_data(questions, answers, word_dict, neg_sample_ratio, seq_lengt
 
     return s1, s2, score
 
+
 def generate_cnn_sentence(question, answer, word_dict, seq_length):
     """
     Generate QA pair without score
@@ -227,6 +233,7 @@ def generate_cnn_sentence(question, answer, word_dict, seq_length):
 
     s1, s2 = padding_sentence([s1], [s2], seq_length)
     return s1, s2
+
 
 def get_stop_words(file_name):
     """
@@ -256,11 +263,82 @@ def preprocessing(conversations, stopwords_file="Data/Chinese Stop Words"):
     return pred_conversations
 
 
+def extract_single_word_embedding(input_file_name, output_file_name):
+    """
+    Read word embedding initializer from Baidu Baike
+    Extract single word embedding
+    """
+    start = time.clock()
+    input_file = open(input_file_name, 'r')
+    output_file = open(output_file_name, 'w')
+    single_word_count = 0
+    all_word_count = 0
+    for i, line in enumerate(input_file.readlines()):
+        if i == 0: continue
+        line_list = line.strip().split(" ")
+        # print(len(line[0].decode("utf-8")))
+        # print(line[0])
+        if len(line_list[0].decode("utf-8")) == 1:
+            single_word_count += 1
+            output_file.write(line)
+        all_word_count += 1
+
+        # Test
+        # if i>100: break
+    input_file.close()
+    output_file.close()
+    end = time.clock()
+    print("Single Word Count percentage is %d/%d" % (single_word_count, all_word_count))
+    print("Extract Single Word Embedding Cost %f" % (end - start))
+
+
+def read_single_word_embedding(file_name):
+    """
+    Read single word embedding
+    """
+    start = time.clock()
+    word_dict = {'<unk>': 0}
+    word_embedding = [list(np.zeros(300))]
+
+    file = open(file_name, 'r')
+    for i, line in enumerate(file.readlines()):
+        line = line.strip().split(" ")
+        if line[0].decode("utf-8") not in word_dict:
+            word_dict[line[0].decode("utf-8")] = len(word_dict)
+            word_embedding.append(line[1:])
+
+        # Test
+        # if i > 10: break
+
+    file.close()
+    end = time.clock()
+    print("Read Single Word Embedding Cost %f" % (end-start))
+
+    return word_dict, np.array(word_embedding)
+
+def calc_word_in_dict_percentage():
+    word_dict, _ = read_single_word_embedding("Data/single_word_embedding")
+    _, questions, _, _ = read_pred_data("Data/simple_pred_QA-pair.csv")
+    all_word_num = 0
+    word_in_dict_num = 0
+    for question in questions:
+        for i in range(len(question)):
+            all_word_num += 1
+            if question[i] in word_dict:
+                word_in_dict_num += 1
+    print("Word in dict percentage is %d/%d" % (word_in_dict_num, all_word_num))
+
+
 def main():
+
     # read_origin_data("Data/QA-pair","Data/simple_pred_QA-pair.csv", stopwords_file="Data/Simple Chinese Stop Words.txt")
     # stop_words = get_stop_words("Data/Chinese Stop Words")
     # pred_conversations = preprocessing([u'你好？！你呢'])
-    read_pred_data("Data/pred_QA-pair.csv")
+    # read_pred_data("Data/pred_QA-pair.csv")
+    # extract_single_word_embedding("Data/word_embedding","Data/single_word_embedding")
+    calc_word_in_dict_percentage()
+
+
 
 
 if __name__ == "__main__":

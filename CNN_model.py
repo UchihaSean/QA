@@ -31,7 +31,9 @@ class TextCNN(object):
 
 
     def init_weight(self):
-        # Embedding layer
+        """
+        Embedding layer
+        """
         with tf.device('/cpu:0'), tf.name_scope("embedding"):
             self.embedding_size = self.word_embedding.shape[1]
             self.W = tf.get_variable(name='word_embedding', shape=self.word_embedding.shape, dtype=tf.float32,
@@ -43,7 +45,9 @@ class TextCNN(object):
 
 
     def inference(self):
-        # Create a convolution + maxpool layer for each filter size
+        """
+        Create a convolution + maxpool layer for each filter size
+        """
         pooled_outputs = []
         for i, filter_size in enumerate(self.filter_sizes):
             with tf.name_scope("conv-maxpool-%s" % filter_size):
@@ -74,12 +78,16 @@ class TextCNN(object):
         self.h_pool_flat = tf.reshape(self.h_pool, [-1, self.num_filters_total])
 
     def add_dropout(self):
-        # Add dropout
+        """
+        Add dropout
+        """
         with tf.name_scope("dropout"):
             self.h_drop = tf.nn.dropout(self.h_pool_flat, self.dropout_keep_prob)
 
     def add_output(self):
-        # Final (unnormalized) scores and predictions
+        """
+        Final (unnormalized) scores and predictions
+        """
         with tf.name_scope("output"):
             W = tf.get_variable(
                 "W",
@@ -91,6 +99,9 @@ class TextCNN(object):
             self.scores = tf.nn.sigmoid(tf.nn.xw_plus_b(self.h_drop, W, b, name="scores"))
 
     def add_loss_acc(self):
+        """
+        Loss and Accuracy
+        """
         # CalculateMean cross-entropy loss
         with tf.name_scope("loss"):
             losses = tf.square(self.scores - self.input_y)
