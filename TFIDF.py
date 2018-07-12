@@ -6,7 +6,7 @@ import random
 
 
 class TFIDF:
-    def __init__(self, top_k, questions=None, pred_questions=None, answers=None, pred_answers=None,
+    def __init__(self, questions=None, pred_questions=None, answers=None, pred_answers=None,
                  word_sentence_dict=None):
         # Read Preprocessed Data
         if questions == None:
@@ -25,9 +25,8 @@ class TFIDF:
         self.idf_dict = generate_idf_dict(self.pred_questions)
         self.tf_idf_pred_questions = generate_tf_idf_list(self.pred_questions, self.idf_dict)
 
-        self.top_k = top_k
 
-    def ask_response(self, question):
+    def ask_response(self, question, top_k):
         """
         :param question: input a question
         :return: top k id and response
@@ -54,7 +53,7 @@ class TFIDF:
         response_id = []
 
         # Generate Top K
-        for j in range(min(self.top_k, len(top))):
+        for j in range(min(top_k, len(top))):
             item = int(heapq.heappop(top)[1])
             # print("Similar %d: %s" % (j + 1, self.questions[item]))
             # print("TFIDF Response %d: %s" % (j + 1, self.answers[item]))
@@ -191,6 +190,6 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    tfidf = TFIDF(3)
-    tfidf.ask_response("有什么好的电脑么")
-    tfidf.ask_response("有什么推荐的手机么")
+    tfidf = TFIDF()
+    tfidf.ask_response("有什么好的电脑么", top_k= 3)
+    tfidf.ask_response("有什么推荐的手机么", top_k= 3)

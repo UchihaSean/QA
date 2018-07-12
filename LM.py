@@ -6,7 +6,7 @@ import random
 
 
 class LM:
-    def __init__(self, top_k, questions=None, pred_questions=None, answers=None, pred_answers=None,
+    def __init__(self, questions=None, pred_questions=None, answers=None, pred_answers=None,
                  word_sentence_dict=None):
         # Read Preprocessed Data
         if questions == None:
@@ -21,9 +21,7 @@ class LM:
         else:
             self.word_sentence_dict = word_sentence_dict
 
-        self.top_k = top_k
-
-    def ask_response(self, question):
+    def ask_response(self, question, top_k):
         """
         :param question: input a question
         :return: top k id and response
@@ -49,7 +47,7 @@ class LM:
         response_id = []
 
         # Generate Top K
-        for j in range(min(self.top_k, len(top))):
+        for j in range(min(top_k, len(top))):
             item = int(heapq.heappop(top)[1])
             # print("Similar %d: %s" % (j + 1, self.questions[item]))
             # print("LM Response %d: %s" % (j + 1, self.answers[item]))
@@ -137,5 +135,5 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    lm = LM(3)
-    lm.ask_response("有什么好的电脑么")
+    lm = LM()
+    lm.ask_response("有什么好的电脑么", top_k=3)

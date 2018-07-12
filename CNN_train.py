@@ -15,7 +15,7 @@ import random
 
 class CNN:
 
-    def __init__(self, top_k=3, questions=None, pred_questions=None, answers=None, pred_answers=None,
+    def __init__(self, questions=None, pred_questions=None, answers=None, pred_answers=None,
                  word_sentence_dict=None, isTrain=True):
 
         # Parameters
@@ -43,7 +43,6 @@ class CNN:
         self.answers = answers
         self.pred_answers = pred_answers
         self.word_sentence_dict = word_sentence_dict
-        self.top_k = top_k
 
         # Random seed
         random.seed(12345)
@@ -231,7 +230,7 @@ class CNN:
                 print("\nTest")
                 test_step(self.s1_test, self.s2_test, self.score_test)
 
-    def ask_response(self, question, tfidf_response_id=None):
+    def ask_response(self, question, top_k, tfidf_response_id=None):
         """
         :param question: input a question, tfidf top K results
         :return: top k response
@@ -275,7 +274,7 @@ class CNN:
         else:
             sentence_id_set.update(tfidf_response_id)
 
-        print(len(sentence_id_set))
+        print("Candidate Number is %d " % len(sentence_id_set))
         for i in sentence_id_set:
             s1, s2 = Data.generate_cnn_sentence(question.decode("utf-8"), self.answers[i], self.word_dict,
                                                 self.seq_length)
@@ -287,7 +286,7 @@ class CNN:
 
         response = []
         # Generate Top K
-        for j in range(min(self.top_k, len(top))):
+        for j in range(min(top_k, len(top))):
             item = int(heapq.heappop(top)[1])
             # print("Similar %d: %s" % (j + 1, self.questions[item]))
             # print("CNN Response %d: %s" % (j + 1, self.answers[item]))
@@ -300,11 +299,10 @@ class CNN:
 
 def main():
     questions, pred_questions, answers, pred_answers = Data.read_pred_data("Data/pred_QA-pair.csv")
-    cnn = CNN(3, questions, pred_questions, answers, pred_answers)
+    cnn = CNN(questions, pred_questions, answers, pred_answers)
     # cnn.train_dev()
     cnn.test()
-    # cnn.ask_response("有什么好的电脑么")
-
+    # cnn.ask_response("有什么好的电脑么", 3)
 
 if __name__ == "__main__":
     main()
