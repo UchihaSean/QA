@@ -283,7 +283,6 @@ class CNN:
             heapq.heappush(top, (-score, str(i)))
 
         # print("Question: %s" % question)
-
         response = []
         # Generate Top K
         for j in range(min(top_k, len(top))):

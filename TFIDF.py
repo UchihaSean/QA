@@ -127,9 +127,12 @@ def cosine_similarity(dict_x, dict_y):
     return multiply(dict_x, dict_y) / (np.sqrt(multiply(dict_x, dict_x)) * np.sqrt(multiply(dict_y, dict_y)))
 
 
-def main():
+def file_output(input_file_name,output_file_name):
+    """
+    tfidf file output
+    """
     # Read Preprocessed Data
-    questions, pred_questions, answers, pred_answers = Data.read_pred_data("Data/pred_QA-pair.csv")
+    questions, pred_questions, answers, pred_answers = Data.read_pred_data(input_file_name)
 
     pair = list(zip(questions, pred_questions, answers, pred_answers))
     random.shuffle(pair)
@@ -158,7 +161,7 @@ def main():
 
     # Choose the Top K similar ones
     top_k = 5
-    output = open("Data/TFIDF.txt", 'w')
+    output = open(output_file_name, 'w')
     for i in range(len(tf_idf_test_pred_questions)):
         top = []
 
@@ -176,20 +179,23 @@ def main():
             heapq.heappush(top, (-score, str(j)))
 
         output.write("Question: " + test_questions[i].encode("utf-8") + "\n")
-        output.write("Ground Truth: " + test_answers[i].encode("utf-8") + "\n")
+        # output.write("Ground Truth: " + test_answers[i].encode("utf-8") + "\n")
 
         # Generate Top K
         for j in range(min(top_k, len(top))):
             item = int(heapq.heappop(top)[1])
-            output.write("Our similar " + str(j + 1) + ": " + train_questions[item].encode("utf-8") + "\n")
+            # output.write("Our similar " + str(j + 1) + ": " + train_questions[item].encode("utf-8") + "\n")
             output.write("Our reply " + str(j + 1) + ": " + train_answers[item].encode("utf-8") + "\n")
         output.write("\n")
 
     output.close()
+def main():
+    file_output("Data/pred_QA-pair.csv", "Data/TFIDF.txt")
+    # tfidf = TFIDF()
+    # tfidf.ask_response("有什么好的电脑么", top_k= 3)
+    # tfidf.ask_response("有什么推荐的手机么", top_k= 3)
 
 
 if __name__ == "__main__":
-    # main()
-    tfidf = TFIDF()
-    tfidf.ask_response("有什么好的电脑么", top_k= 3)
-    tfidf.ask_response("有什么推荐的手机么", top_k= 3)
+    main()
+

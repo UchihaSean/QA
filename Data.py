@@ -3,7 +3,9 @@ import csv
 import numpy as np
 import random
 import time
+
 random.seed(12345)
+
 
 class dataset(object):
     def __init__(self, s1, s2, label):
@@ -35,7 +37,8 @@ class dataset(object):
         return np.array(self.s1[start:end]), np.array(self.s2[start:end]), np.array(self.label[start:end])
 
 
-def read_origin_data(input_file_name, output_file_name, stopwords_file="Data/Chinese Stop Words"):
+def read_origin_data(input_file_name, output_file_name, no_split_stopwords_file="Data/None Chinese Stop Words.txt",
+                     stopwords_file="Data/Chinese Stop Words"):
     """
     Read file and preprocessed data
     Output preprocessed data
@@ -58,16 +61,18 @@ def read_origin_data(input_file_name, output_file_name, stopwords_file="Data/Chi
         answers.append(qa[1].decode('utf-8'))
 
         # Counter for test
-        # if i >100: break
+        # if i >1000: break
 
     file.close()
     print("Read files End")
 
+    questions = no_split_preprocessing(questions, no_split_stopwords_file)
+    answers = no_split_preprocessing(answers, no_split_stopwords_file)
     pred_questions = preprocessing(questions, stopwords_file)
     pred_answers = preprocessing(answers, stopwords_file)
 
     # Output
-    with open(output_file_name, 'w') as csvfile:
+    with open(output_file_name, 'w',) as csvfile:
         fieldnames = ['question', 'pred_question', 'answer', 'pred_answer']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -118,9 +123,10 @@ def read_pred_data(file_name):
             pred_questions.append(line[1].strip().decode("utf-8").split(" "))
             answers.append(line[2].strip().decode("utf-8"))
             pred_answers.append(line[3].strip().decode("utf-8").split(" "))
-
+            print(questions[-1])
+            print(answers[-1])
             # Counter for test
-            # if i > 10000: break
+            if i > 1000: break
 
     # Random
     pair = list(zip(questions, pred_questions, answers, pred_answers))
@@ -252,6 +258,22 @@ def get_stop_words(file_name):
     return set(stop_words)
 
 
+def no_split_preprocessing(conversations, stopwords_file="Data/Chinese Stop Words"):
+    """
+    No split stop words removal
+    """
+    pred_conversations = []
+    stop_words = get_stop_words(stopwords_file)
+    for i in range(len(conversations)):
+        pred_conversation = ""
+        for j in range(len(conversations[i])):
+            if conversations[i][j].encode('utf-8') in stop_words: continue
+            if conversations[i][j] == " ": continue
+            pred_conversation += conversations[i][j]
+        pred_conversations.append(pred_conversation)
+    return pred_conversations
+
+
 def preprocessing(conversations, stopwords_file="Data/Chinese Stop Words"):
     """
     Stop words removal
@@ -336,12 +358,20 @@ def calc_word_in_dict_percentage():
 
 
 def main():
-    # read_origin_data("Data/QA-pair","Data/simple_pred_QA-pair.csv", stopwords_file="Data/Simple Chinese Stop Words.txt")
+    # read_origin_data("Data/QA-pair", "Data/pred_QA-pair.csv",
+    #                  no_split_stopwords_file="Data/None Chinese Stop Words.txt",
+    #                  stopwords_file="Data/Simple Chinese Stop Words.txt")
+
+    # string = no_split_preprocessing(["&mdash;&mdash;我脸上有痘印，这款有效果吗".decode("utf-8")], stopwords_file="Data/None Chinese Stop Words.txt")[0]
+    # print(string)
+
     # stop_words = get_stop_words("Data/Chinese Stop Words")
     # pred_conversations = preprocessing([u'你好？！你呢'])
-    # read_pred_data("Data/pred_QA-pair.csv")
+
+    read_pred_data("Data/pred_QA-pair.csv")
+
     # extract_single_word_embedding("Data/word_embedding","Data/single_word_embedding")
-    calc_word_in_dict_percentage()
+    # calc_word_in_dict_percentage()
 
 
 if __name__ == "__main__":
