@@ -103,7 +103,7 @@ def cnn_output(input_file_name, output_file_name, output_num, top_k):
                 tfidf_response_id, tfidf_response = tfidf.ask_response(qs_input, top_k * 10)
                 cnn_response = cnn.ask_response(qs_input, top_k, tfidf_response_id)
 
-                for i in range(top_k):
+                for i in range(min(top_k,len(cnn_response))):
                     dict["Reply " + str(i + 1)] = cnn_response[i].encode("utf-8")
                 writer.writerow(dict)
 
@@ -113,7 +113,7 @@ def main():
     # qs_input = "屏幕分辨率多少"
     # top_k = 3
     # ask_question(qs_input, top_k)
-    cnn_output("Data/pred_QA-pair.csv","Data/CNN.csv", output_num=1, top_k= 3)
+    cnn_output("Data/pred_QA-pair.csv","Data/CNN.csv", output_num=100, top_k= 3)
 
 
 if __name__ == "__main__":
