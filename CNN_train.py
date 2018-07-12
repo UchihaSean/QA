@@ -123,8 +123,8 @@ class CNN:
                 sess.run(tf.local_variables_initializer())
 
                 # Restore
-                # saver.restore(sess, "/tmp/model/ckpt")
-                # print("Restore model information")
+                saver.restore(sess, "/tmp/model/ckpt")
+                print("Restore model information")
 
                 # Embedding output
                 # output = open("Data/word_embedding_before.txt", 'w')
@@ -299,8 +299,8 @@ class CNN:
 def main():
     questions, pred_questions, answers, pred_answers = Data.read_pred_data("Data/pred_QA-pair.csv")
     cnn = CNN(questions, pred_questions, answers, pred_answers)
-    # cnn.train_dev()
-    cnn.test()
+    cnn.train_dev()
+    # cnn.test()
     # cnn.ask_response("有什么好的电脑么", 3)
 
 if __name__ == "__main__":

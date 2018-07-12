@@ -127,7 +127,7 @@ def cosine_similarity(dict_x, dict_y):
     return multiply(dict_x, dict_y) / (np.sqrt(multiply(dict_x, dict_x)) * np.sqrt(multiply(dict_y, dict_y)))
 
 
-def file_output(input_file_name,output_file_name):
+def file_output(input_file_name,output_file_name, top_k):
     """
     tfidf file output
     """
@@ -160,7 +160,6 @@ def file_output(input_file_name,output_file_name):
     # print(word_sentence_dict)
 
     # Choose the Top K similar ones
-    top_k = 5
     output = open(output_file_name, 'w')
     for i in range(len(tf_idf_test_pred_questions)):
         top = []
@@ -190,10 +189,10 @@ def file_output(input_file_name,output_file_name):
 
     output.close()
 def main():
-    file_output("Data/pred_QA-pair.csv", "Data/TFIDF.txt")
+    file_output("Data/pred_QA-pair.csv", "Data/TFIDF.txt", 3)
     # tfidf = TFIDF()
-    # tfidf.ask_response("有什么好的电脑么", top_k= 3)
-    # tfidf.ask_response("有什么推荐的手机么", top_k= 3)
+    # tfidf.ask_response("安装费用", top_k= 3)
+    # tfidf.ask_response("什么时候有货", top_k= 3)
 
 
 if __name__ == "__main__":

@@ -79,7 +79,7 @@ def LM_similarity(query, document, doc_len):
             score += np.log(1 + (doc_dict[word] + 0.0) / doc_len)
     return score
 
-def file_output(input_file_name, output_file_name):
+def file_output(input_file_name, output_file_name, top_k):
     """
     LM file output
     """
@@ -106,7 +106,6 @@ def file_output(input_file_name, output_file_name):
     word_sentence_dict = Data.generate_word_sentence_dict(train_pred_questions)
 
     # Choose the Top K similar ones
-    top_k = 5
     output = open(output_file_name, 'w')
     for i in range(len(test_pred_questions)):
         top = []
@@ -137,7 +136,7 @@ def file_output(input_file_name, output_file_name):
 
 def main():
 
-    file_output("Data/pred_QA-pair.csv", "Data/LM.txt")
+    file_output("Data/pred_QA-pair.csv", "Data/LM.txt", 3)
     # lm = LM()
     # lm.ask_response("有什么好的电脑么", top_k=3)
 

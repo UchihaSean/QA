@@ -90,7 +90,7 @@ def main():
     # qs_input = "屏幕分辨率多少"
     # top_k = 3
     # ask_question(qs_input, top_k)
-    cnn_output(10, 3)
+    cnn_output(1, 3)
 
 
 if __name__ == "__main__":

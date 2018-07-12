@@ -123,10 +123,11 @@ def read_pred_data(file_name):
             pred_questions.append(line[1].strip().decode("utf-8").split(" "))
             answers.append(line[2].strip().decode("utf-8"))
             pred_answers.append(line[3].strip().decode("utf-8").split(" "))
-            print(questions[-1])
-            print(answers[-1])
+
             # Counter for test
-            if i > 1000: break
+            if i > 100000: break
+            # print(questions[-1])
+            # print(answers[-1])
 
     # Random
     pair = list(zip(questions, pred_questions, answers, pred_answers))
@@ -358,9 +359,9 @@ def calc_word_in_dict_percentage():
 
 
 def main():
-    # read_origin_data("Data/QA-pair", "Data/pred_QA-pair.csv",
-    #                  no_split_stopwords_file="Data/None Chinese Stop Words.txt",
-    #                  stopwords_file="Data/Simple Chinese Stop Words.txt")
+    read_origin_data("Data/QA-pair", "Data/pred_QA-pair.csv",
+                     no_split_stopwords_file="Data/None Chinese Stop Words.txt",
+                     stopwords_file="Data/Simple Chinese Stop Words.txt")
 
     # string = no_split_preprocessing(["&mdash;&mdash;我脸上有痘印，这款有效果吗".decode("utf-8")], stopwords_file="Data/None Chinese Stop Words.txt")[0]
     # print(string)
@@ -368,7 +369,7 @@ def main():
     # stop_words = get_stop_words("Data/Chinese Stop Words")
     # pred_conversations = preprocessing([u'你好？！你呢'])
 
-    read_pred_data("Data/pred_QA-pair.csv")
+    # read_pred_data("Data/pred_QA-pair.csv")
 
     # extract_single_word_embedding("Data/word_embedding","Data/single_word_embedding")
     # calc_word_in_dict_percentage()
