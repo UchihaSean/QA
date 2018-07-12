@@ -3,7 +3,7 @@ import Data
 import numpy as np
 import heapq
 import random
-
+import csv
 
 class LM:
     def __init__(self, questions=None, pred_questions=None, answers=None, pred_answers=None,
@@ -79,7 +79,7 @@ def LM_similarity(query, document, doc_len):
             score += np.log(1 + (doc_dict[word] + 0.0) / doc_len)
     return score
 
-def file_output(input_file_name, output_file_name, top_k):
+def file_output(input_file_name, output_file_name ,top_k=3):
     """
     LM file output
     """
@@ -105,38 +105,69 @@ def file_output(input_file_name, output_file_name, top_k):
     # Build word --> sentence dictionary
     word_sentence_dict = Data.generate_word_sentence_dict(train_pred_questions)
 
+    # TXT output
     # Choose the Top K similar ones
-    output = open(output_file_name, 'w')
-    for i in range(len(test_pred_questions)):
-        top = []
+    if output_file_name.split(".")[-1] == "txt":
+        output = open(output_file_name, 'w')
+        for i in range(len(test_pred_questions)):
+            top = []
 
-        # Generate sentence id set which include at least one same word
-        sentence_id_set = set()
-        for j in range(len(test_pred_questions[i])):
-            if test_pred_questions[i][j] in word_sentence_dict:
-                sentence_id_set.update(word_sentence_dict[test_pred_questions[i][j]])
+            # Generate sentence id set which include at least one same word
+            sentence_id_set = set()
+            for j in range(len(test_pred_questions[i])):
+                if test_pred_questions[i][j] in word_sentence_dict:
+                    sentence_id_set.update(word_sentence_dict[test_pred_questions[i][j]])
 
-        # Generate LM similarity Score
-        for j in sentence_id_set:
-            score = LM_similarity(test_pred_questions[i], train_pred_questions[j], len(train_pred_questions[j]))
-            heapq.heappush(top, (-score, str(j)))
+            # Generate LM similarity Score
+            for j in sentence_id_set:
+                score = LM_similarity(test_pred_questions[i], train_pred_questions[j], len(train_pred_questions[j]))
+                heapq.heappush(top, (-score, str(j)))
 
-        output.write("Question: " + test_questions[i].encode("utf-8") + "\n")
-        # output.write("Ground Truth: " + test_answers[i].encode("utf-8") + "\n")
+            output.write("Question: " + test_questions[i].encode("utf-8") + "\n")
+            # output.write("Ground Truth: " + test_answers[i].encode("utf-8") + "\n")
 
-        # Generate Top K
-        for j in range(min(top_k, len(top))):
-            item = int(heapq.heappop(top)[1])
-            # output.write("Our similar " + str(j + 1) + ": " + train_questions[item].encode("utf-8") + "\n")
-            output.write("Our reply " + str(j + 1) + ": " + train_answers[item].encode("utf-8") + "\n")
-        output.write("\n")
+            # Generate Top K
+            for j in range(min(top_k, len(top))):
+                item = int(heapq.heappop(top)[1])
+                # output.write("Our similar " + str(j + 1) + ": " + train_questions[item].encode("utf-8") + "\n")
+                output.write("Our reply " + str(j + 1) + ": " + train_answers[item].encode("utf-8") + "\n")
+            output.write("\n")
+        output.close()
 
-    output.close()
+    if output_file_name.split(".")[-1] =="csv":
+        with open(output_file_name, 'w', ) as csvfile:
+            fieldnames = ['Question']
+            fieldnames.extend(["Reply " + str(i + 1) for i in range(top_k)])
+            fieldnames.append("Score")
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+
+            for i in range(len(test_pred_questions)):
+                top = []
+                dict = {"Score":""}
+                # Generate sentence id set which include at least one same word
+                sentence_id_set = set()
+                for j in range(len(test_pred_questions[i])):
+                    if test_pred_questions[i][j] in word_sentence_dict:
+                        sentence_id_set.update(word_sentence_dict[test_pred_questions[i][j]])
+
+                # Generate LM similarity Score
+                for j in sentence_id_set:
+                    score = LM_similarity(test_pred_questions[i], train_pred_questions[j], len(train_pred_questions[j]))
+                    heapq.heappush(top, (-score, str(j)))
+
+                dict["Question"] = test_questions[i].encode("utf-8")
+
+                # Generate Top K
+                for j in range(min(top_k, len(top))):
+                    item = int(heapq.heappop(top)[1])
+                    dict["Reply " + str(j + 1)] = train_answers[item].encode("utf-8")
+                writer.writerow(dict)
 
 
 def main():
 
-    file_output("Data/pred_QA-pair.csv", "Data/LM.txt", 3)
+    file_output("Data/pred_QA-pair.csv", "Data/LM.csv" ,3)
     # lm = LM()
     # lm.ask_response("有什么好的电脑么", top_k=3)
 

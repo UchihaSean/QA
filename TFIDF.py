@@ -3,6 +3,7 @@ import Data
 import heapq
 import numpy as np
 import random
+import csv
 
 
 class TFIDF:
@@ -24,7 +25,6 @@ class TFIDF:
         # Calculate TF-IDF
         self.idf_dict = generate_idf_dict(self.pred_questions)
         self.tf_idf_pred_questions = generate_tf_idf_list(self.pred_questions, self.idf_dict)
-
 
     def ask_response(self, question, top_k):
         """
@@ -127,7 +127,7 @@ def cosine_similarity(dict_x, dict_y):
     return multiply(dict_x, dict_y) / (np.sqrt(multiply(dict_x, dict_x)) * np.sqrt(multiply(dict_y, dict_y)))
 
 
-def file_output(input_file_name,output_file_name, top_k):
+def file_output(input_file_name, output_file_name,top_k=3):
     """
     tfidf file output
     """
@@ -159,37 +159,72 @@ def file_output(input_file_name,output_file_name, top_k):
     word_sentence_dict = Data.generate_word_sentence_dict(train_pred_questions)
     # print(word_sentence_dict)
 
+    # Txt output
+    # # Choose the Top K similar ones
+    if output_file_name.split(".")[-1] == "txt":
+        output = open(output_file_name, 'w')
+        for i in range(len(tf_idf_test_pred_questions)):
+            top = []
+
+            # Generate sentence id set which include at least one same word
+            sentence_id_set = set()
+            for j in range(len(test_pred_questions[i])):
+                if test_pred_questions[i][j] in word_sentence_dict:
+                    sentence_id_set.update(word_sentence_dict[test_pred_questions[i][j]])
+                    # print test_pred_questions[i][j],
+            # print(len(sentence_id_set))
+
+            # Generate cosine similarity score
+            for j in sentence_id_set:
+                score = cosine_similarity(tf_idf_test_pred_questions[i], tf_idf_train_pred_questions[j])
+                heapq.heappush(top, (-score, str(j)))
+
+            output.write("Question: " + test_questions[i].encode("utf-8") + "\n")
+            # output.write("Ground Truth: " + test_answers[i].encode("utf-8") + "\n")
+
+            # Generate Top K
+            for j in range(min(top_k, len(top))):
+                item = int(heapq.heappop(top)[1])
+                # output.write("Our similar " + str(j + 1) + ": " + train_questions[item].encode("utf-8") + "\n")
+                output.write("Our reply " + str(j + 1) + ": " + train_answers[item].encode("utf-8") + "\n")
+            output.write("\n")
+        output.close()
+
+    # CSV output
     # Choose the Top K similar ones
-    output = open(output_file_name, 'w')
-    for i in range(len(tf_idf_test_pred_questions)):
-        top = []
+    if  output_file_name.split(".")[-1] == "csv":
+        with open(output_file_name, 'w', ) as csvfile:
+            fieldnames = ['Question']
+            fieldnames.extend(["Reply " + str(i + 1) for i in range(top_k)])
+            fieldnames.append("Score")
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
 
-        # Generate sentence id set which include at least one same word
-        sentence_id_set = set()
-        for j in range(len(test_pred_questions[i])):
-            if test_pred_questions[i][j] in word_sentence_dict:
-                sentence_id_set.update(word_sentence_dict[test_pred_questions[i][j]])
-                # print test_pred_questions[i][j],
-        # print(len(sentence_id_set))
+            for i in range(len(tf_idf_test_pred_questions)):
+                top = []
+                dict = {"Score": ""}
+                # Generate sentence id set which include at least one same word
+                sentence_id_set = set()
+                for j in range(len(test_pred_questions[i])):
+                    if test_pred_questions[i][j] in word_sentence_dict:
+                        sentence_id_set.update(word_sentence_dict[test_pred_questions[i][j]])
 
-        # Generate cosine similarity score
-        for j in sentence_id_set:
-            score = cosine_similarity(tf_idf_test_pred_questions[i], tf_idf_train_pred_questions[j])
-            heapq.heappush(top, (-score, str(j)))
+                # Generate cosine similarity score
+                for j in sentence_id_set:
+                    score = cosine_similarity(tf_idf_test_pred_questions[i], tf_idf_train_pred_questions[j])
+                    heapq.heappush(top, (-score, str(j)))
 
-        output.write("Question: " + test_questions[i].encode("utf-8") + "\n")
-        # output.write("Ground Truth: " + test_answers[i].encode("utf-8") + "\n")
+                dict["Question"] = test_questions[i].encode("utf-8")
 
-        # Generate Top K
-        for j in range(min(top_k, len(top))):
-            item = int(heapq.heappop(top)[1])
-            # output.write("Our similar " + str(j + 1) + ": " + train_questions[item].encode("utf-8") + "\n")
-            output.write("Our reply " + str(j + 1) + ": " + train_answers[item].encode("utf-8") + "\n")
-        output.write("\n")
+                # Generate Top K
+                for j in range(min(top_k, len(top))):
+                    item = int(heapq.heappop(top)[1])
+                    dict["Reply " + str(j + 1)] = train_answers[item].encode("utf-8")
+                writer.writerow(dict)
 
-    output.close()
+
 def main():
-    file_output("Data/pred_QA-pair.csv", "Data/TFIDF.txt", 3)
+    file_output("Data/pred_QA-pair.csv", "Data/TFIDF.csv", 3)
     # tfidf = TFIDF()
     # tfidf.ask_response("安装费用", top_k= 3)
     # tfidf.ask_response("什么时候有货", top_k= 3)
@@ -197,4 +232,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
