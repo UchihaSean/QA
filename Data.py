@@ -125,7 +125,7 @@ def read_pred_data(file_name):
             pred_answers.append(line[3].strip().decode("utf-8").split(" "))
 
             # Counter for test
-            # if i > 10000: break
+            if i > 10000: break
             # print(questions[-1])
             # print(answers[-1])
 
