@@ -24,6 +24,7 @@ class TFIDF:
 
         # Calculate TF-IDF
         self.idf_dict = generate_idf_dict(self.pred_questions)
+
         self.tf_idf_pred_questions = generate_tf_idf_list(self.pred_questions, self.idf_dict)
 
     def ask_response(self, question, top_k):
@@ -152,6 +153,8 @@ def file_output(input_file_name, output_file_name,top_k=3):
 
     # Calculate TF-IDF
     idf_dict = generate_idf_dict(train_pred_questions)
+    print("Word Num is %d" % len(idf_dict))
+
     tf_idf_train_pred_questions = generate_tf_idf_list(train_pred_questions, idf_dict)
     tf_idf_test_pred_questions = generate_tf_idf_list(test_pred_questions, idf_dict)
 
