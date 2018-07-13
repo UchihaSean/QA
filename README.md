@@ -1,11 +1,11 @@
 # JDChat   
+
 ### Information Retrieval (Sub model for Reinforcement Learning)
 ### Environment
 > - python 2.7  
 > - tensorflow 1.8.0
+
 ### Files
-  
-]
 > - Data Preporcessing --------- Data.py Data_Visualization.ipynb
 > - TFIDF model ---------------------- TFIDF.py
 > - LM model   ---------------------- LM.py
