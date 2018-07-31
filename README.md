@@ -1,4 +1,4 @@
-# JDChat   
+# QA  
 
 ### Information Retrieval (Sub model for Reinforcement Learning)
 ### Environment
